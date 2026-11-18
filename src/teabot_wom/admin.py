@@ -59,7 +59,7 @@ async def _confirm_entry(ctx: Ctx, claim_id: int) -> DiffEntry:
         if other is not None and other.user_id is not None:
             return DiffEntry(change="skip", target=target, detail="belongs to another member", key=claim_id)
         after = [*before, *await accounts_of(ctx.db, ctx.guild.id, account.person_id)]
-    return DiffEntry(change="confirm", target=target, detail=change_text(before, after), key=claim_id)
+    return DiffEntry(change="confirm", target=target, detail=change_text(ctx, before, after), key=claim_id)
 
 
 @plugin.action(risk=DESTRUCTIVE, needs="manage_guild")
@@ -207,7 +207,9 @@ async def plan_link(
     after = [*before, added] if added is not None else before
     since = f", first joined {first_joined}" if first_joined else ""
     return Diff(
-        entries=[DiffEntry(change="link", target=f"{who}: {found.name}", detail=change_text(before, after) + since)]
+        entries=[
+            DiffEntry(change="link", target=f"{who}: {found.name}", detail=change_text(ctx, before, after) + since)
+        ]
     )
 
 
@@ -233,7 +235,7 @@ async def plan_unlink(ctx: Ctx, name: Name) -> Diff:
         raise ActionError(f"{name} is in no person.")
     before = await accounts_of(ctx.db, ctx.guild.id, found.person_id)
     after = [a for a in before if a.player_id != found.player_id]
-    return Diff(entries=[DiffEntry(change="unlink", target=found.name, detail=change_text(before, after))])
+    return Diff(entries=[DiffEntry(change="unlink", target=found.name, detail=change_text(ctx, before, after))])
 
 
 @plugin.action(risk=DESTRUCTIVE, needs="manage_guild")
@@ -289,7 +291,9 @@ async def plan_merge(ctx: Ctx, into: Member, person: int) -> Diff:
     before = await accounts_of(ctx.db, ctx.guild.id, mine.id) if mine else []
     after = [*before, *await accounts_of(ctx.db, ctx.guild.id, person)]
     return Diff(
-        entries=[DiffEntry(change="merge", target=f"{other.note} into <@{into.id}>", detail=change_text(before, after))]
+        entries=[
+            DiffEntry(change="merge", target=f"{other.note} into <@{into.id}>", detail=change_text(ctx, before, after))
+        ]
     )
 
 
@@ -327,7 +331,9 @@ async def plan_split(ctx: Ctx, names: str, note: str) -> Diff:
             raise ActionError(f"{name} is in no person.")
         before = await accounts_of(ctx.db, ctx.guild.id, found.person_id)
         after = [a for a in before if a.player_id != found.player_id]
-        entries.append(DiffEntry(change="move", target=f"{found.name} to {note}", detail=change_text(before, after)))
+        entries.append(
+            DiffEntry(change="move", target=f"{found.name} to {note}", detail=change_text(ctx, before, after))
+        )
     return Diff(entries=entries)
 
 

@@ -189,6 +189,17 @@ async def test_the_rank_audit_lists_ranks_the_rule_calls_for(teabot_harness: Har
     assert gaps["clan accounts with no member"] == ["Staff"]
 
 
+async def test_the_rank_rule_labels_the_rank_due_by_days_whatever_rank_is_held(teabot_harness: HarnessFactory) -> None:
+    rule = RankRule(ranks=[RankStep(rank="sapphire", days=0), RankStep(rank="emerald", days=365)])
+    harness = await setup(teabot_harness, rank_rule=rule)
+    fred = harness.guild.add_member(NONE, name="fred")
+    serve(harness, [membership(1, "Fred", "silver_key", "2020-01-01"), membership(2, "Fred Iron", "sapphire")])
+    await run_sync(harness)
+    await harness.as_member(fred).call(claim, names="Fred")
+    await confirm_all(harness)
+    assert await labels(harness, fred.id) == ["due:emerald", "in_clan", "linked", "rank:silver_key"]
+
+
 async def test_the_link_post_asks_for_names_in_a_form(teabot_harness: HarnessFactory) -> None:
     harness = await setup(teabot_harness)
     channel = harness.guild.add_channel(FakeChannel(name="link-your-accounts"))

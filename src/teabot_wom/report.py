@@ -11,9 +11,9 @@ from typing import Literal
 from pydantic import BaseModel, Field
 from teabot.sdk import READ, DirectoryMember, MemberFilter, MemberRef, UntrustedText
 
-from teabot_wom import Ctx, RankRule, plugin
+from teabot_wom import Ctx, plugin
 from teabot_wom.names import contains, key
-from teabot_wom.people import ACCOUNT, Account, Person, all_people, main_of
+from teabot_wom.people import ACCOUNT, Account, Person, all_people, expected_rank, main_of, since_of
 
 SHOWN = 25
 
@@ -128,16 +128,6 @@ class PeoplePage(BaseModel):
 type Which = Literal["all", "no_member", "in_clan", "away", "left"]
 
 
-def since_of(rule: RankRule | None, accounts: list[Account]) -> date | None:
-    """When a person joined, as the rank rule counts it: their first join ever, or the earliest among accounts in
-    the clan or away."""
-    if rule is not None and rule.count_from == "first_joined":
-        days = [a.first_joined for a in accounts if a.first_joined]
-    else:
-        days = [a.joined for a in accounts if a.present and a.joined]
-    return min(days, default=None)
-
-
 def _entry(ctx: Ctx, p: Person, accounts: list[Account]) -> PersonEntry:
     main = main_of(p, accounts)
     return PersonEntry(
@@ -187,13 +177,6 @@ class Gap(BaseModel):
 class GapsPage(BaseModel):
     gaps: list[Gap]
     last_change: str | None = Field(description="When the group last changed, the nearest WOM says to its last sync")
-
-
-def expected_rank(rule: RankRule, since: date, today: date) -> str | None:
-    """The rank the rule gives for this many days in the clan: the step with the most days not above them."""
-    days = (today - since).days
-    reached = [s for s in sorted(rule.ranks, key=lambda s: s.days) if s.days <= days]
-    return reached[-1].rank if reached else None
 
 
 async def gaps_of(ctx: Ctx) -> GapsPage:

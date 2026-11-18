@@ -96,6 +96,7 @@ For each person with a member, from their confirmed accounts. One keyed label jo
 
 - `linked`, for every member who has a person, accounts or not. A person outlives unlinking every account, so such a member stays inside a rule's scope and loses the clan role.
 - `in_clan` when any of their accounts is in the clan or away, and `left` when they have accounts and none is.
+- `due:<name>`, with a `rank_rule` set, for the rank the rule gives for the person's days in the clan, counted as the rank audit counts them, while one of their accounts is in the clan or away. It follows the days, whatever ranks the game shows, so a rule over tenure roles reads it, and the person's labels change on the day they reach a step. A person with no join date gets none.
 - `rank:<name>` for the in-game rank of each confirmed account in the clan or away, so a rename's in-between state keeps the rank. A rank rule's steps are ordered highest first, so the highest rank a person holds wins with no rank order in the plugin, and separate rules over different ranks, such as staff ranks and a tenure ladder, each find their own. Unlinking an account can only remove labels, so it never raises anyone.
 
 ### Keeping in step with WOM
@@ -156,7 +157,7 @@ For admins, also over MCP and the service API:
 
 In-game ranks can't be set through WOM, so the plugin reports them, for a server with a `rank_rule`. Each run it works out every person's days in the clan from `count_from` and today, and the rank `rank_rule` gives for that. `wom.gaps` and the weekly digest list each account holding one of the rule's ranks that differs, such as an alt still at the lowest rank while its main has five years. Accounts holding a rank outside the rule, such as a staff rank, are left alone. A person with a missing join date is listed as such, never ranked on a guess. An admin fixes the game.
 
-Discord follows the game through role rules on `rank:` labels, so the rank rule lives in one place, and the audit keeps the game right.
+Discord follows the rule through role rules on `due:` labels, and the game's own ranks, such as staff ranks, through `rank:` labels. The rank rule lives in one place, and the audit keeps the game in step with it.
 
 ### Data and privacy
 
@@ -170,7 +171,7 @@ Discord follows the game through role rules on `rank:` labels, so the rank rule 
 
 Tea ranks by time in the clan, with a person's oldest account setting the rank of all their accounts. That is Tea's `rank_rule`, counting from the current stint (`count_from: current_stint`).
 
-Everyone has the same tenure rule, and staff have a rule of their own besides it. A staff member holds an in-game staff rank on a few of their accounts, the ones they play most, and any one of them is enough for the Discord staff role. Fred has three accounts: one holds Silver Key, a staff rank, and two hold Blue Gem. In Discord he holds Silver Key, Blue Gem and Clan Member. Every confirmed account in the clan gives a `rank:` label, so the staff rule reads the staff ranks and the tenure rule reads the tenure ranks, with no special case. A staff member whose every account holds a staff rank holds no tenure role, since none of their accounts holds a tenure rank.
+Everyone has the same tenure rule, and staff have a rule of their own besides it. A staff member holds an in-game staff rank on a few of their accounts, the ones they play most, and any one of them is enough for the Discord staff role. Tenure follows days in the clan against the days Tea sets for each rank, through `due:` labels, and staff follows the in-game staff ranks, through `rank:` labels. Fred has three accounts, one holding Silver Key, a staff rank, and has been in the clan long enough for Blue Gem. In Discord he holds Silver Key, Blue Gem and Clan Member, whatever ranks his accounts show in game.
 
 ### Step 1: load what's known (one evening, with an assistant)
 
@@ -179,8 +180,8 @@ Everyone has the same tenure rule, and staff have a rule of their own besides it
 3. Check `wom.gaps`, set missing join dates, and fix the in-game ranks the audit lists, so the rules' first run starts from a corrected game.
 4. On the site, make the role rules, scoped to linked members (`labels_from: wom, labels_any: [linked]`), so unlinked members keep their roles:
    - **Membership:** one rule with two steps, Clan Member on `in_clan`, then Friends on `left`, so a linked member holds exactly one. Friends is also for guests who never joined; they aren't linked, so they're outside the scope and keep the Friends an admin gives them by hand.
-   - **Tenure:** one rule over the tenure rank roles, a step per tenure rank, highest first, with a cap that fits a promotion night. A linked member holds at most one tenure role.
-   - **Staff:** one rule over the staff rank roles, a step per staff rank, highest first. A linked member holds at most one staff role.
+   - **Tenure:** one rule over the tenure rank roles, a step per tenure rank on `due:<rank>`, highest first, with a cap that fits a promotion night. A linked member holds at most one tenure role.
+   - **Staff:** one rule over the staff rank roles, a step per staff rank on `rank:<rank>`, highest first. A linked member holds at most one staff role.
 5. Note which admins confirmed the rules, since their grants end when those admins lose the rights, and a second admin renews them by running the same action again.
 
 ### Step 2: the link channel
@@ -216,7 +217,7 @@ Everyone has the same tenure rule, and staff have a rule of their own besides it
 1. Time in the clan counts from the current stint.
 2. Hand-kept links are not imported; claims start from scratch.
 3. Friends is for both people who left the clan and guests who never joined.
-4. Tenure and staff are separate rules. Any account with an in-game staff rank gives its person that staff rank's Discord role, and their tenure role still comes from their accounts' tenure ranks.
+4. Tenure and staff are separate rules. Tenure comes from days in the clan against Tea's days for each rank. Any account with an in-game staff rank gives its person that staff rank's Discord role.
 5. Tea's WOM group is 651.
 
 ## Order of work

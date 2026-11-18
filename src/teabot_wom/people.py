@@ -4,7 +4,9 @@ A person's labels come from their confirmed accounts only:
 - `linked` for every person with a member, accounts or not, so a member who drops every account stays inside a role
   rule's scope;
 - `in_clan` when an account is in the clan or away, and `left` when they have accounts and none is;
-- `rank:<rank>` for each in-game rank one of their accounts in the clan, or away, holds.
+- `rank:<rank>` for each in-game rank one of their accounts in the clan, or away, holds;
+- `due:<rank>`, with a `rank_rule` set, for the rank the rule gives for their days in the clan, while one of
+  their accounts is in it.
 """
 
 from collections.abc import Iterable, Sequence
@@ -13,6 +15,7 @@ from datetime import date, datetime, timedelta
 from pydantic import BaseModel
 from teabot.sdk import Queries, Tx
 
+from teabot_wom import Ctx, RankRule
 from teabot_wom.names import key
 
 PRESENT = ("in", "away")
@@ -66,19 +69,46 @@ def main_of(person: Person, accounts: Sequence[Account]) -> Account | None:
     return min(pool, key=order, default=None)
 
 
-def labels_of(accounts: Iterable[Account]) -> list[str]:
-    """The labels a person with a member gives, from their confirmed accounts."""
+def since_of(rule: RankRule | None, accounts: Iterable[Account]) -> date | None:
+    """When a person joined, as the rank rule counts it: their first join ever, or the earliest among accounts in
+    the clan or away."""
+    found = list(accounts)
+    if rule is not None and rule.count_from == "first_joined":
+        days = [a.first_joined for a in found if a.first_joined]
+    else:
+        days = [a.joined for a in found if a.present and a.joined]
+    return min(days, default=None)
+
+
+def expected_rank(rule: RankRule, since: date, today: date) -> str | None:
+    """The rank the rule gives for this many days in the clan: the step with the most days not above them."""
+    days = (today - since).days
+    reached = [s for s in sorted(rule.ranks, key=lambda s: s.days) if s.days <= days]
+    return reached[-1].rank if reached else None
+
+
+def label(rank: str) -> str:
+    return rank.replace(" ", "_")
+
+
+def labels_of(accounts: Iterable[Account], rule: RankRule | None, today: date) -> list[str]:
+    """The labels a person with a member gives, from their confirmed accounts and the rank rule."""
     found = list(accounts)
     out = {"linked"}
     if found:
         out.add("in_clan" if any(a.present for a in found) else "left")
-    out |= {f"rank:{a.rank.replace(' ', '_')}" for a in found if a.present and a.rank}
+    out |= {f"rank:{label(a.rank)}" for a in found if a.present and a.rank}
+    since = since_of(rule, found) if any(a.present for a in found) else None
+    due = expected_rank(rule, since, today) if rule is not None and since is not None else None
+    if due is not None:
+        out.add(f"due:{label(due)}")
     return sorted(out)
 
 
-def change_text(before: Iterable[Account], after: Iterable[Account]) -> str:
+def change_text(ctx: Ctx, before: Iterable[Account], after: Iterable[Account]) -> str:
     """A person's labels before and after a change, for a plan's entry."""
-    old, new = labels_of(before), labels_of(after)
+    rule, today = ctx.config.rank_rule, ctx.now.date()
+    old, new = labels_of(before, rule, today), labels_of(after, rule, today)
     return "labels unchanged" if old == new else f"labels {', '.join(old) or 'none'} → {', '.join(new)}"
 
 
