@@ -18,7 +18,7 @@ Keep Discord in step with your clan's [Wise Old Man](https://wiseoldman.net) gro
 | `admin_channel` | Where the weekly digest, and a held sync, are posted. |
 | `rank_rule` | Your clan's ranks by days in the clan, for `tenure:` labels and the rank audit, such as `{"count_from": "current_stint", "ranks": [{"rank": "sapphire", "days": 0}, {"rank": "emerald", "days": 365}]}`. Leave it out if your clan ranks some other way. |
 
-Once an hour, teabot reads the group: who joined, who left, ranks, and renames. An account missing from the group counts as away for `away_days`, still in the clan, before it counts as left, so a rename that Wise Old Man has not approved yet costs nobody anything.
+Once an hour, and a minute after the plugin is turned on, teabot reads the group: who joined, who left, ranks, and renames. `/wom gaps` shows when it last did. An account missing from the group counts as away for `away_days`, still in the clan, before it counts as left, so a rename that Wise Old Man has not approved yet costs nobody anything.
 
 When more than a tenth of the clan's accounts, and more than five, go missing at once, teabot changes nothing and tells the admin channel, since a broken clan sync looks the same as a clear-out. If they really left, `/wom accept_sync` takes the group as it is.
 

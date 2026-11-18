@@ -223,3 +223,29 @@ async def test_the_link_post_asks_for_names_in_a_form(teabot_harness: HarnessFac
     button: FakeButton = sent.buttons[0]
     reply = await harness.press(button, typed={"names": "Fred"})
     assert reply.startswith("Claimed Fred")
+
+
+async def test_a_suggestion_says_which_name_matched(teabot_harness: HarnessFactory) -> None:
+    harness = await setup(teabot_harness)
+    member = harness.guild.add_member(NONE, name="slow pepsi")
+    db: Any = harness.admin
+    await db.execute(
+        "INSERT INTO core.members (guild_id, user_id, name, observed_at) VALUES ($1, $2, $3, now())",
+        harness.guild.id,
+        member.id,
+        "slow pepsi",
+    )
+    serve(harness, [membership(1, "Slow Pepsi")])
+    await run_sync(harness)
+    serve(harness, [membership(1, "PEPS1")])
+    await run_sync(harness)
+    (found,) = (await harness.call(report.claims)).suggestions
+    assert (str(found.name), str(found.matched), found.past_name) == ("PEPS1", "Slow Pepsi", True)
+
+
+async def test_gaps_say_when_no_sync_has_run(teabot_harness: HarnessFactory) -> None:
+    harness = await setup(teabot_harness)
+    assert (await harness.call(report.gaps)).last_sync is None
+    serve(harness, [membership(1, "Fred")])
+    await run_sync(harness)
+    assert (await harness.call(report.gaps)).last_sync is not None

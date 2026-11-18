@@ -257,6 +257,13 @@ async def write_labels(ctx: Ctx) -> None:
         return
 
 
+@plugin.on_enable
+async def first_sync(ctx: Ctx) -> None:
+    """Sync a minute after the plugin is turned on, without waiting an hour for the first run."""
+    async with ctx.db.transaction() as tx:
+        await tx.schedule(sync.bind(), at=ctx.now + SETTLE)
+
+
 async def relabel(tx: Tx, ctx: Ctx) -> None:
     """Write the labels again a moment after an admin's change, so a burst of changes makes one write."""
     await tx.schedule(write_labels.bind(), at=ctx.now + SETTLE)

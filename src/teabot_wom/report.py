@@ -31,8 +31,10 @@ class Evidence(BaseModel):
 
 class Suggestion(BaseModel):
     member: MemberRef
-    name: UntrustedText
-    why: str
+    name: UntrustedText = Field(description="The account's current name")
+    discord_name: UntrustedText = Field(description="The member's Discord name that matched")
+    matched: UntrustedText = Field(description="The account name it matched, current or past")
+    past_name: bool = Field(description="Whether it matched a name the account no longer has")
 
 
 class ClaimsPage(BaseModel):
@@ -64,6 +66,15 @@ def _matches(member: DirectoryMember | None, account: Account | None, name: str)
     wanted = [name, *(account.past_names if account else [])]
     mine = [n for n in (member.nickname, member.display_name, member.name) if n]
     return sorted({n for n in mine for w in wanted if key(n) == key(w) or contains(n, w)})
+
+
+def _first_match(member: DirectoryMember, account: Account) -> tuple[str, str] | None:
+    """The member's first Discord name that matches the account, and which of its names it matched."""
+    for n in (member.nickname, member.display_name, member.name):
+        for w in (account.name, *account.past_names):
+            if n and (key(n) == key(w) or contains(n, w)):
+                return n, w
+    return None
 
 
 @plugin.action(risk=READ, needs="manage_guild")
@@ -105,8 +116,17 @@ async def claims(ctx: Ctx) -> ClaimsPage:
         if m.user_id in linked or len(suggestions) >= SHOWN:
             continue
         for a in free:
-            if found := _matches(m, a, a.name):
-                suggestions.append(Suggestion(member=m.user_id, name=a.name, why=f"Discord name {found[0]}"))
+            if found := _first_match(m, a):
+                discord_name, matched = found
+                suggestions.append(
+                    Suggestion(
+                        member=m.user_id,
+                        name=a.name,
+                        discord_name=discord_name,
+                        matched=matched,
+                        past_name=matched != a.name,
+                    )
+                )
                 break
     return ClaimsPage(claims=evidence, suggestions=suggestions)
 
@@ -176,6 +196,7 @@ class Gap(BaseModel):
 
 class GapsPage(BaseModel):
     gaps: list[Gap]
+    last_sync: str | None = Field(description="When teabot last read the group; none before the first sync")
     last_change: str | None = Field(description="When the group last changed, the nearest WOM says to its last sync")
 
 
@@ -233,10 +254,16 @@ async def gaps_of(ctx: Ctx) -> GapsPage:
         for a in accounts:
             if a.present and a.person_id is None and a.key in waiting_keys and a.rank in governed:
                 add("unconfirmed claims the audit skips", a.name)
-    changed = await ctx.db.fetchval(
-        "SELECT to_char(group_updated_at, 'YYYY-MM-DD HH24:MI') FROM sync_state WHERE guild_id = $1", ctx.guild.id
+    times = await ctx.db.fetchrow(
+        "SELECT to_char(fetched_at, 'YYYY-MM-DD HH24:MI') AS synced, to_char(group_updated_at, 'YYYY-MM-DD HH24:MI') "
+        "AS changed FROM sync_state WHERE guild_id = $1",
+        ctx.guild.id,
     )
-    return GapsPage(gaps=[Gap(kind=k, count=len(v), examples=v[:SHOWN]) for k, v in out.items()], last_change=changed)
+    return GapsPage(
+        gaps=[Gap(kind=k, count=len(v), examples=v[:SHOWN]) for k, v in out.items()],
+        last_sync=times["synced"] if times else None,
+        last_change=times["changed"] if times else None,
+    )
 
 
 class Notice(BaseModel):
