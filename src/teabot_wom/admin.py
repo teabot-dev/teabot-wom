@@ -333,7 +333,7 @@ async def plan_split(ctx: Ctx, names: str, note: str) -> Diff:
 
 @plugin.action(needs="manage_guild")
 async def pin_main(ctx: Ctx, name: Name) -> str:
-    """Make an account its person's main, which their nickname shows and the rank audit counts from.
+    """Make an account its person's main, which `/wom me` and `wom.people` show first.
 
     Args:
         name: The account's name

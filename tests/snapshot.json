@@ -229,7 +229,7 @@
         "type": 1
       },
       {
-        "description": "Make an account its person's main, which their nickname shows and the rank audit counts from.",
+        "description": "Make an account its person's main, which `/wom me` and `wom.people` show first.",
         "name": "pin_main",
         "options": [
           {

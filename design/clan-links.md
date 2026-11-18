@@ -1,6 +1,6 @@
 # Clan links: a Wise Old Man plugin, and how Tea uses it
 
-The design, reviewed until it converged: Discord members link their Wise Old Man accounts, a member's accounts group into one person, names follow renames, and roles follow what a plugin says about members, through rules in the roles plugin. Member labels and buttons that ask are in teabot 1.12, and this repository holds the plugin; nicknames and role rules come next.
+The design, reviewed until it converged: Discord members link their Wise Old Man accounts, a member's accounts group into one person, names follow renames, and roles follow what a plugin says about members, through rules in the roles plugin. Member labels and buttons that ask are in teabot 1.12, and this repository holds the plugin; role rules come next. Keeping nicknames matching accounts is a server's own choice, so the plugin doesn't do it.
 
 ## The problem
 
@@ -19,7 +19,7 @@ The design, reviewed until it converged: Discord members link their Wise Old Man
 
 ### Spike S11: WOM's data, as it really behaves
 
-Run on 2026-11-18 against Tea's group ([spikes.md](spikes.md#s11-wise-old-mans-data-for-clan-links)). Every membership has `clientSyncJoinedAt`, so the rank audit goes ahead. A rename keeps the account's ID and join date. WOM's record holds a broken sync that dropped three quarters of the group for a day. Nicknames have their own rate limit, 10 per 10 seconds per server.
+Run on 2026-11-18 against Tea's group ([spikes.md](spikes.md#s11-wise-old-mans-data-for-clan-links)). Every membership has `clientSyncJoinedAt`, so the rank audit goes ahead. A rename keeps the account's ID and join date. WOM's record holds a broken sync that dropped three quarters of the group for a day.
 
 ### Member labels in the directory
 
@@ -34,12 +34,6 @@ Run on 2026-11-18 against Tea's group ([spikes.md](spikes.md#s11-wise-old-mans-d
 - **Who sees them:** any plugin with `reads=["members"]` can filter on another plugin's labels, so labels say nothing a server's plugins shouldn't know, and the plugin guide says so.
 - **Privacy and deletion:** member deletion covers labels, the site's privacy policy lists them as directory data, and the plugin's hub page shows `writes=["labels"]`.
 
-### Nicknames by member ID
-
-- `ctx.guild.set_nickname(user_id, nickname, by=, reason=)`, as `add_role` and `remove_role` by ID already are, raising `MemberGone`. A job over uncached members needs no fetch per member.
-- With `by=`, it refuses a member who ranks at or above `by`, unless `by` owns the server, as Discord refuses it when a person renames someone by hand, and needs `by`'s Manage Nicknames.
-- Discord limits nickname changes to 10 per 10 seconds per server, in a bucket of their own apart from role changes (S11), so a plugin changing nicknames paces itself.
-
 ### Buttons that ask
 
 - `action.bind(...)` may leave text inputs out. Pressing the button opens a modal for them, through the modal path `LongText` already has. Discord's modal holds at most five inputs, so an action with more open inputs is refused at registration.
@@ -51,7 +45,7 @@ Nothing here is about WOM. A rule says "within scope S, each member holds the fi
 
 - **One kind, two uses.**
   - A list of one step is a plain rule, such as Clan Member following `labels_any: [in_clan]`.
-  - Tea's rank roles are one rule with a step per rank, highest first, each `labels_any: [rank:<name>]`. A member whose labels match no step holds none of the list's roles.
+  - A ladder of rank roles is one rule with a step per rank, highest first, each `labels_any: [rank:<name>]`. A member whose labels match no step holds none of the list's roles.
 - **A rule is a reconciler.** It states the end result, so it stores no changes. Each run works out the difference: for each member in S, the role of their first matching step, if they lack it, and every other role of the list they hold. It applies the difference member by member, giving and taking together in each member's turn, and records one outcome per run. A holder outside S keeps their roles, so a rule over a plugin's labels never touches members the plugin knows nothing about. Members in S are found with the scope's filter, and each step's members with one query of the step's filter within S; the rule then gives each member the first step they appear in. `MemberFilter` never needs negation.
 - **One pace per server.** Rule runs and the `change` job draw from one budget per server inside the roles plugin, a next-allowed time at S10's rate less headroom for pickers. A rule run takes its slots first, so a three-hour admin change never holds up a promotion. A run that can't finish within its slots queues itself for the next ones and works out the difference again.
 - **When it runs:** on `on_labels_changed` for a plugin a rule names, on `on_member_roles` for a role its scope names, such as Exempt, on `on_member_join`, and once a day as a safety run. Triggers are throttled: one schedules the server's rule job a minute out only when none is pending, so a run follows the first trigger within a minute and a busy role can't keep pushing it back. Changes to the ruled roles themselves, by hand or by another bot, wait for the daily run, so a rule never fights another bot change by change. A rule's own changes trigger only the rules whose scope names one of its roles, such as a rank rule scoped to Clan Member, which then run at once.
@@ -93,7 +87,7 @@ A hub plugin, `wom`, in its own repo (teabot-dev/teabot-wom). It depends on no o
 - **Every claim waits for an admin.** A waiting claim shows in `/wom me`, is followed through renames by its WOM ID, and appears in the rank audit marked unconfirmed, so the audit never asks an admin to promote an account on a claim alone. It feeds nothing, no main, dates or labels, until confirmed. The digest lists waiting claims for an admin, or an assistant with one, to confirm in batches.
 - Rejected and expired claims are deleted after 30 days.
 - **One writer at a time.** The sync and every admin action that changes people take a per-server lock, and each action's plan hashes the person and account rows it touches, so a plan made before a sync comes back stale after it.
-- **Main:** the account a person's nickname shows, and the one the rank audit counts from. Among the person's confirmed accounts in the clan or away, else among all their confirmed accounts: the earliest `first_joined`, then the earliest `joined`, then the lowest WOM ID. Accounts with no date come last. An admin can pin another, which changes the nickname only, since labels don't depend on the main.
+- **Main:** the account `/wom me` and `wom.people` show first. Among the person's confirmed accounts in the clan or away, else among all their confirmed accounts: the earliest `first_joined`, then the earliest `joined`, then the lowest WOM ID. Accounts with no date come last. An admin can pin another, which changes what they show only, since labels and the rank audit don't depend on the main.
 - **Forgetting a person.** `wom.forget` deletes a person and their links, for a member linked by mistake, so they leave every rule's scope and keep the roles they hold.
 
 ### The labels it writes
@@ -102,7 +96,7 @@ For each person with a member, from their confirmed accounts. One keyed label jo
 
 - `linked`, for every member who has a person, accounts or not. A person outlives unlinking every account, so such a member stays inside a rule's scope and loses the clan role.
 - `in_clan` when any of their accounts is in the clan or away, and `left` when they have accounts and none is.
-- `rank:<name>` for the in-game rank of each confirmed account in the clan or away, so a rename's in-between state keeps the rank. A rank rule's steps are ordered highest first, so the highest rank a person holds wins with no rank order in the plugin, and a staff main with an ordinary alt still matches the alt's step. Unlinking an account can only remove labels, so it never raises anyone.
+- `rank:<name>` for the in-game rank of each confirmed account in the clan or away, so a rename's in-between state keeps the rank. A rank rule's steps are ordered highest first, so the highest rank a person holds wins with no rank order in the plugin, and separate rules over different ranks, such as staff ranks and a tenure ladder, each find their own. Unlinking an account can only remove labels, so it never raises anyone.
 
 ### Keeping in step with WOM
 
@@ -117,20 +111,11 @@ For each person with a member, from their confirmed accounts. One keyed label jo
 - `Plugin(hosts=["api.wiseoldman.net"])`, with a descriptive User-Agent naming the project, `teabot-wom/<version> (+repo URL)`, as WOM asks, and nothing naming the operator.
 - **A rename WOM missed:** `/wom me` links to WOM's own name-change form, where anyone can submit one. The plugin sends nothing to WOM, so members' input never spends the instance's key.
 
-### Nicknames
-
-- With `nickname` on, the plugin keeps a member's nickname to their main's name, through `set_nickname` by ID, for as long as they have a person, whether their accounts are in the clan or have left. A person with no confirmed accounts left keeps whatever nickname they have.
-- It changes a nickname only when it no longer contains the main's name as whole words, compared normalised, so a member who adds to it, such as "Main | he/him", keeps their version. On a rename it swaps the old name for the new inside the nickname, keeping the rest, and sets the bare name when the result would pass Discord's 32 characters.
-- **A standing grant, as rules have.** Turning nicknames on is a destructive action, and its apply's audit row is the grant. Each run checks it with `ctx.authorized` and makes changes `by=` its confirmer, so it needs their Manage Nicknames and never renames someone ranked at or above them, and the job stops with a line in the log channel when the grant ends. Running it again renews it, and the docs recommend turning nicknames on from the site, since a grant made through a token ends with the token. Members who linked before nicknames came on hear first: turning them on posts an announcement in the link channel, and the first run waits a week, so anyone who'd rather keep their main private turns theirs off. Its plan shows how many nicknames it changes, a page of before and after, and how many it can't, since Discord doesn't let the bot rename the server owner or anyone above it.
-- A member can opt out with `/wom nickname off`, and an admin can set it for them with `wom.nicknames member:`.
-- The plugin stores the nickname it last set for each member.
-
 ### Guessing links
 
 The matcher runs after each sync and when someone joins Discord.
 
 - It matches a member's nickname, display name or username against accounts' current and past names, by the one normalising function.
-- It ignores a nickname equal to the one the plugin last set for that member.
 - The evidence says which name matched, current or past.
 - A suggestion is listed for an admin in `wom.claims`. It is never recorded on its own, since the member made no claim.
 - Patterns for alts, such as "Iron X", wait until real data shows they're worth it. Members linking their own alts with the button is the main route.
@@ -144,7 +129,6 @@ For members:
 | `/wom claim names:` | Claim up to five accounts, a main and its alts, as names one per line or separated by commas; the "Link accounts" button opens the same action. Each claim waits for an admin. A claim on an account not yet in the group waits up to 14 days. |
 | `/wom drop name:` | Drop one of your accounts or claims, at once. |
 | `/wom me` | Your accounts, your main and your join dates, as the plugin sees them, with a link to WOM's name-change form. |
-| `/wom nickname on/off` | Whether the bot keeps your nickname. |
 
 For admins, also over MCP and the service API:
 
@@ -159,7 +143,6 @@ For admins, also over MCP and the service API:
 | `wom.pin_main`, `wom.set_joined` | destructive | Pin a person's main, or set an account's `joined` or `first_joined` by hand, with a plan of the label changes. |
 | `wom.people` | read | People, their accounts, main and dates; filterable by "no member", "in clan", "away" and "left". |
 | `wom.gaps` | read | What needs a person: clan accounts with no member, holders of the clan role with no confirmed account, competing claims, merges, archives, missing join dates, a stale clan sync, and in-game ranks that don't fit the rank rule. |
-| `wom.nicknames` | destructive | Turn kept nicknames on for the server, with a plan, or off. With `member=`, a write that turns one member's on or off. |
 
 ### Server config
 
@@ -178,16 +161,16 @@ Discord follows the game through role rules on `rank:` labels, so the rank rule 
 ### Data and privacy
 
 - Account names are public, through WOM and the hiscores. The link to a Discord member is the new personal data.
-- A person's member is a `teabot.member_id`, as are a claim's and the stored last-set nickname's, so `teabot users delete` removes them. A note is written by admins about someone not on Discord, is deleted with its person, and the privacy policy says so.
+- A person's member is a `teabot.member_id`, as is a claim's, so `teabot users delete` removes them. A note is written by admins about someone not on Discord, is deleted with its person, and the privacy policy says so.
 - Every action that changes people is destructive, so an assistant on a default token can't move roles through labels, and an assistant confirming claims shows each plan, including member-written names as untrusted text.
-- A member sees their own links with `/wom me`, and admins see everyone's. With nicknames on, a confirmed member's main is in their nickname, so it is public in the server; the nicknames plan and the link post say so, and `/wom nickname off` keeps it private.
+- A member sees their own links with `/wom me`, and admins see everyone's.
 - The plugin declares `reads=["members"]` for the matcher and `writes=["labels"]`.
 
 ## Part 4: Tea's setup
 
 Tea ranks by time in the clan, with a person's oldest account setting the rank of all their accounts. That is Tea's `rank_rule`, counting from the current stint (`count_from: current_stint`).
 
-Staff ranks sit above the tenure ladder. A staff member holds an in-game staff rank on a few of their accounts, the ones they play most, and any one of them is enough for the Discord staff role, in place of a tenure rank role. Fred has three accounts: one holds Silver Key, a staff rank, and two hold Blue Gem. In Discord he holds the Silver Key role and Clan Member, and no Blue Gem role. Since every confirmed account in the clan gives a `rank:` label and a rule gives the first step a member matches, one rank rule with the staff ranks as its top steps does that with no special case.
+Everyone has the same tenure rule, and staff have a rule of their own besides it. A staff member holds an in-game staff rank on a few of their accounts, the ones they play most, and any one of them is enough for the Discord staff role. Fred has three accounts: one holds Silver Key, a staff rank, and two hold Blue Gem. In Discord he holds Silver Key, Blue Gem and Clan Member. Every confirmed account in the clan gives a `rank:` label, so the staff rule reads the staff ranks and the tenure rule reads the tenure ranks, with no special case. A staff member whose every account holds a staff rank holds no tenure role, since none of their accounts holds a tenure rank.
 
 ### Step 1: load what's known (one evening, with an assistant)
 
@@ -196,17 +179,16 @@ Staff ranks sit above the tenure ladder. A staff member holds an in-game staff r
 3. Check `wom.gaps`, set missing join dates, and fix the in-game ranks the audit lists, so the rules' first run starts from a corrected game.
 4. On the site, make the role rules, scoped to linked members (`labels_from: wom, labels_any: [linked]`), so unlinked members keep their roles:
    - **Membership:** one rule with two steps, Clan Member on `in_clan`, then Friends on `left`, so a linked member holds exactly one. Friends is also for guests who never joined; they aren't linked, so they're outside the scope and keep the Friends an admin gives them by hand.
-   - **Ranks:** one rule over every rank role, a step per in-game rank, the staff ranks first and then the tenure ranks, each highest first, with a cap that fits a promotion night. A member holds exactly one rank role.
-5. Turn nicknames on, read the plan, and confirm it.
-6. Note which admins confirmed the rules and nicknames, since their grants end when those admins lose the rights, and a second admin renews them by running the same action again.
+   - **Tenure:** one rule over the tenure rank roles, a step per tenure rank, highest first, with a cap that fits a promotion night. A linked member holds at most one tenure role.
+   - **Staff:** one rule over the staff rank roles, a step per staff rank, highest first. A linked member holds at most one staff role.
+5. Note which admins confirmed the rules, since their grants end when those admins lose the rights, and a second admin renews them by running the same action again.
 
 ### Step 2: the link channel
 
 - `#link-your-rsn`, with one post:
-  - what linking does for the member, as it stands when posted: at first, that admins can see who is who; once nicknames and rules are on, the post is edited to say their nickname and Discord rank are kept matching the clan;
+  - what linking does for the member, as it stands when posted: at first, that admins can see who is who; once the rules are on, the post is edited to say their Discord rank is kept matching the clan;
   - the "Link accounts" button, with every account at once, alts included;
-  - that each account waits for an admin, usually a day;
-  - once nicknames are on, that the bot keeps their main's name in their nickname unless they turn it off.
+  - that each account waits for an admin, usually a day.
 - The bot edits the post's count of linked members each day, so others see it working, naming nobody.
 - New members get a line in the welcome message pointing to it.
 - After step 1, the post is announced once with a single @Clan Member mention.
@@ -215,7 +197,7 @@ Staff ranks sit above the tenure ladder. A staff member holds an in-game staff r
 
 | Who | What | How often |
 |---|---|---|
-| The wom plugin | Syncs with WOM, follows renames, keeps nicknames and labels | Hourly |
+| The wom plugin | Syncs with WOM, follows renames, keeps labels | Hourly |
 | The roles plugin | Applies role rules when labels or roles change, holding back large changes | As changes happen, and daily |
 | The wom plugin | Posts a digest to the admin channel: waiting claims, competing claims, leavers, merges, archives, rank mismatches, a stale clan sync | Weekly |
 | An admin, or an assistant with one | Settles claims, works through `wom.gaps`, releases a held rule run if it was right | Weekly |
@@ -224,8 +206,8 @@ Staff ranks sit above the tenure ladder. A staff member holds an in-game staff r
 
 ### How much is automated
 
-- **Automatic:** syncing, renames, nicknames once turned on, labels, and role rules within their caps.
-- **Confirmed by a person:** every claim, held rule runs, and turning nicknames on.
+- **Automatic:** syncing, renames, labels, and role rules within their caps.
+- **Confirmed by a person:** every claim, and held rule runs.
 - **Left to members:** saying which accounts are theirs, which neither WOM nor Discord can know.
 - **Left to admins:** in-game ranks, and claims that don't fit the evidence.
 
@@ -234,7 +216,7 @@ Staff ranks sit above the tenure ladder. A staff member holds an in-game staff r
 1. Time in the clan counts from the current stint.
 2. Hand-kept links are not imported; claims start from scratch.
 3. Friends is for both people who left the clan and guests who never joined.
-4. Any account with an in-game staff rank gives its person that staff rank's Discord role, in place of a tenure rank role.
+4. Tenure and staff are separate rules. Any account with an in-game staff rank gives its person that staff rank's Discord role, and their tenure role still comes from their accounts' tenure ranks.
 5. Tea's WOM group is 651.
 
 ## Order of work
@@ -243,14 +225,13 @@ The linking campaign takes weeks of members' time, so it starts as early as it c
 
 1. Buttons that ask, member labels, the filter fields, several filters at once, `writes=["labels"]` and `on_labels_changed`. Labels change nothing in Discord on their own, so they ship before any rule reads them.
 2. The wom plugin's linking, labels and rank audit: sync, people, claims, `/wom`, `wom.gaps`, the admin actions with their label plans, the link channel and the digest. Tea's step 1 up to its role rules, and step 2, start here.
-3. Nicknames by member ID, with `by=`.
-4. Role rules in the roles plugin.
-5. The wom plugin's nicknames, and Tea's rules.
+3. Role rules in the roles plugin.
+4. Tea's rules.
 
 ## Decisions this changes
 
-- **D45** gains member labels, `on_labels_changed`, `set_nickname` by ID and buttons that ask.
+- **D45** gains member labels, `on_labels_changed` and buttons that ask.
 - **Role pickers** refuse a role a rule owns.
 - **Role changes (design/role-changes.md):** rules and the `change` job share one pace per server, with rules first. Rules make changes with no member confirming each run, under a standing grant.
 - **The member directory (design/member-directory.md):** labels become directory data, keyed by member ID.
-- **D52**, the privacy policy: game-account links, labels and kept nicknames.
+- **D52**, the privacy policy: game-account links and labels.
