@@ -1655,8 +1655,8 @@ wheels = [
 
 [[package]]
 name = "teabot"
-version = "1.12.0.dev0"
-source = { git = "https://github.com/teabot-dev/teabot.git?branch=main#1d6ac34638561d91eecf1ca24fe13d6791a8181d" }
+version = "1.12.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asyncpg" },
     { name = "discord-py" },
@@ -1672,6 +1672,10 @@ dependencies = [
     { name = "uvicorn" },
     { name = "watchfiles" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/87/45/06b23580517a11a8a1059c9fc3fa4259d6e2d9ebc6cea1494174bc83875f/teabot-1.12.0.tar.gz", hash = "sha256:28980e87335d75c496a73f32c0fb6ea050b3badaa5912dc9cecadd579e6876db", size = 5349020, upload-time = "2026-11-18T16:20:37.31Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/15/51/0a6088e72f7202b3c35b0771083f515a81347532d8382312388f808cb5eb/teabot-1.12.0-py3-none-any.whl", hash = "sha256:1a3a0196434a8ab2f1112baece9c61aeef1dddde06c18d918557c74ea0924a4b", size = 332992, upload-time = "2026-11-18T16:20:35.677Z" },
+]
 
 [package.optional-dependencies]
 testing = [
@@ -1683,7 +1687,7 @@ testing = [
 
 [[package]]
 name = "teabot-wom"
-version = "1.0.0.dev0"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "teabot" },
@@ -1697,13 +1701,13 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "teabot", git = "https://github.com/teabot-dev/teabot.git?branch=main" }]
+requires-dist = [{ name = "teabot", specifier = ">=1.12,<2" }]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "pyright", specifier = ">=1.1.414" },
     { name = "ruff", specifier = ">=0.17" },
-    { name = "teabot", extras = ["testing"], git = "https://github.com/teabot-dev/teabot.git?branch=main" },
+    { name = "teabot", extras = ["testing"] },
 ]
 
 [[package]]
