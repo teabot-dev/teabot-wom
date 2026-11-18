@@ -25,8 +25,8 @@ class RankStep(BaseModel):
 
 
 class RankRule(BaseModel):
-    """The clan's own rule for ranks by time in the clan: it gives each person a `due:` label, and the rank audit
-    checks the game against it."""
+    """The clan's own rule for ranks by time in the clan: it gives each person a `tenure:` label, and the rank audit
+    lists accounts it would promote."""
 
     count_from: Literal["first_joined", "current_stint"] = "current_stint"
     ranks: list[RankStep] = []
@@ -38,7 +38,7 @@ class WomConfig(BaseModel):
     clan_role: RoleRef | None = Field(default=None, description="The Discord role clan members hold, for wom.gaps")
     admin_channel: ChannelRef | None = Field(default=None, description="Where the weekly digest goes")
     rank_rule: RankRule | None = Field(
-        default=None, description="Ranks by days in the clan, for due: labels and the rank audit"
+        default=None, description="Ranks by days in the clan, for tenure: labels and the rank audit"
     )
 
 

@@ -13,7 +13,7 @@ from teabot.sdk import READ, DirectoryMember, MemberFilter, MemberRef, Untrusted
 
 from teabot_wom import Ctx, plugin
 from teabot_wom.names import contains, key
-from teabot_wom.people import ACCOUNT, Account, Person, all_people, expected_rank, main_of, since_of
+from teabot_wom.people import ACCOUNT, Account, Person, all_people, expected_rank, ladder, main_of, since_of
 
 SHOWN = 25
 
@@ -214,7 +214,8 @@ async def gaps_of(ctx: Ctx) -> GapsPage:
         add(f"{n.kind}s", n.text)
     rule = ctx.config.rank_rule
     if rule is not None and rule.ranks:
-        governed = {s.rank for s in rule.ranks}
+        order = ladder(rule)
+        governed = set(order)
         today = ctx.now.date()
         for p in found:
             mine = owned.get(p.id, [])
@@ -224,8 +225,10 @@ async def gaps_of(ctx: Ctx) -> GapsPage:
                     continue
                 if since is None:
                     add("ranks with no join date to check", a.name)
-                elif (want := expected_rank(rule, since, today)) is not None and want != a.rank:
-                    add("in-game ranks to change", f"{a.name}: {a.rank} → {want}")
+                elif (want := expected_rank(rule, since, today)) is not None and order.index(want) > order.index(
+                    str(a.rank)
+                ):
+                    add("in-game ranks to promote", f"{a.name}: {a.rank} → {want}")
         waiting_keys = {w.key: w for w in waiting}
         for a in accounts:
             if a.present and a.person_id is None and a.key in waiting_keys and a.rank in governed:

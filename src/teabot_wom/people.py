@@ -5,8 +5,9 @@ A person's labels come from their confirmed accounts only:
   rule's scope;
 - `in_clan` when an account is in the clan or away, and `left` when they have accounts and none is;
 - `rank:<rank>` for each in-game rank one of their accounts in the clan, or away, holds;
-- `due:<rank>`, with a `rank_rule` set, for the rank the rule gives for their days in the clan, while one of
-  their accounts is in it.
+- `tenure:<rank>`, with a `rank_rule` set, while one of their accounts is in the clan: the rank the rule gives for
+  their days in it, or a higher rank of the rule that one of those accounts holds, since a member ranked up early
+  keeps it.
 """
 
 from collections.abc import Iterable, Sequence
@@ -87,6 +88,24 @@ def expected_rank(rule: RankRule, since: date, today: date) -> str | None:
     return reached[-1].rank if reached else None
 
 
+def ladder(rule: RankRule) -> list[str]:
+    """The rule's ranks, lowest first."""
+    return [s.rank for s in sorted(rule.ranks, key=lambda s: s.days)]
+
+
+def tenure_of(rule: RankRule, accounts: Iterable[Account], today: date) -> str | None:
+    """A person's rank on the rule: the one their days give, or a higher one of the rule's that an account of theirs
+    in the clan holds."""
+    found = list(accounts)
+    present = [a for a in found if a.present]
+    order = ladder(rule)
+    places = [order.index(a.rank) for a in present if a.rank in order]
+    since = since_of(rule, found) if present else None
+    if since is not None and (due := expected_rank(rule, since, today)) is not None:
+        places.append(order.index(due))
+    return order[max(places)] if places else None
+
+
 def label(rank: str) -> str:
     return rank.replace(" ", "_")
 
@@ -98,10 +117,8 @@ def labels_of(accounts: Iterable[Account], rule: RankRule | None, today: date) -
     if found:
         out.add("in_clan" if any(a.present for a in found) else "left")
     out |= {f"rank:{label(a.rank)}" for a in found if a.present and a.rank}
-    since = since_of(rule, found) if any(a.present for a in found) else None
-    due = expected_rank(rule, since, today) if rule is not None and since is not None else None
-    if due is not None:
-        out.add(f"due:{label(due)}")
+    if rule is not None and (tenure := tenure_of(rule, found, today)) is not None:
+        out.add(f"tenure:{label(tenure)}")
     return sorted(out)
 
 

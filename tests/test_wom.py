@@ -185,11 +185,11 @@ async def test_the_rank_audit_lists_ranks_the_rule_calls_for(teabot_harness: Har
     await harness.as_member(fred).call(claim, names="Fred")
     await confirm_all(harness)
     gaps = {g.kind: g.examples for g in (await harness.call(report.gaps)).gaps}
-    assert gaps["in-game ranks to change"] == ["Fred: sapphire → emerald"]
+    assert gaps["in-game ranks to promote"] == ["Fred: sapphire → emerald"]
     assert gaps["clan accounts with no member"] == ["Staff"]
 
 
-async def test_the_rank_rule_labels_the_rank_due_by_days_whatever_rank_is_held(teabot_harness: HarnessFactory) -> None:
+async def test_tenure_is_the_rank_days_give_whatever_rank_is_held(teabot_harness: HarnessFactory) -> None:
     rule = RankRule(ranks=[RankStep(rank="sapphire", days=0), RankStep(rank="emerald", days=365)])
     harness = await setup(teabot_harness, rank_rule=rule)
     fred = harness.guild.add_member(NONE, name="fred")
@@ -197,7 +197,20 @@ async def test_the_rank_rule_labels_the_rank_due_by_days_whatever_rank_is_held(t
     await run_sync(harness)
     await harness.as_member(fred).call(claim, names="Fred")
     await confirm_all(harness)
-    assert await labels(harness, fred.id) == ["due:emerald", "in_clan", "linked", "rank:silver_key"]
+    assert await labels(harness, fred.id) == ["in_clan", "linked", "rank:silver_key", "tenure:emerald"]
+
+
+async def test_a_member_ranked_up_early_keeps_the_rank(teabot_harness: HarnessFactory) -> None:
+    rule = RankRule(ranks=[RankStep(rank="sapphire", days=0), RankStep(rank="emerald", days=365)])
+    harness = await setup(teabot_harness, rank_rule=rule)
+    fred = harness.guild.add_member(NONE, name="fred")
+    serve(harness, [membership(1, "Fred", "emerald", "2026-11-01")])
+    await run_sync(harness)
+    await harness.as_member(fred).call(claim, names="Fred")
+    await confirm_all(harness)
+    assert "tenure:emerald" in await labels(harness, fred.id)
+    kinds = {g.kind for g in (await harness.call(report.gaps)).gaps}
+    assert "in-game ranks to promote" not in kinds
 
 
 async def test_the_link_post_asks_for_names_in_a_form(teabot_harness: HarnessFactory) -> None:

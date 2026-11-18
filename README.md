@@ -16,7 +16,7 @@ Keep Discord in step with your clan's [Wise Old Man](https://wiseoldman.net) gro
 | `away_days` | Days an account may be missing from the group before it counts as left. `7` if left out. |
 | `clan_role` | The Discord role clan members hold, so `wom_gaps` can list holders with no linked account. |
 | `admin_channel` | Where the weekly digest, and a held sync, are posted. |
-| `rank_rule` | Your clan's ranks by days in the clan, for `due:` labels and the rank audit, such as `{"count_from": "current_stint", "ranks": [{"rank": "sapphire", "days": 0}, {"rank": "emerald", "days": 365}]}`. Leave it out if your clan ranks some other way. |
+| `rank_rule` | Your clan's ranks by days in the clan, for `tenure:` labels and the rank audit, such as `{"count_from": "current_stint", "ranks": [{"rank": "sapphire", "days": 0}, {"rank": "emerald", "days": 365}]}`. Leave it out if your clan ranks some other way. |
 
 Once an hour, teabot reads the group: who joined, who left, ranks, and renames. An account missing from the group counts as away for `away_days`, still in the clan, before it counts as left, so a rename that Wise Old Man has not approved yet costs nobody anything.
 
@@ -55,13 +55,13 @@ Every member with a confirmed account gets:
 - `linked`, which stays after they drop every account;
 - `in_clan` while one of their accounts is in the clan or away, and `left` once none is;
 - `rank:<rank>` for each in-game rank one of their accounts in the clan holds;
-- with a `rank_rule`, `due:<rank>` for the rank the rule gives for their days in the clan, whatever ranks their accounts hold in game, while one of them is in the clan.
+- with a `rank_rule`, `tenure:<rank>` while one of their accounts is in the clan: the rank the rule gives for their days in the clan, or a higher rank of the rule that one of those accounts holds, since a member ranked up early keeps it.
 
 They count for one day after the last good sync, so a Wise Old Man outage of more than a day leaves them matching nobody.
 
 ## The rank audit
 
-A person's days in the clan come from Wise Old Man's join dates, which RuneLite's clan sync reads from the game, so a role rule on `due:` labels ranks Discord by time in the clan. Wise Old Man can't change in-game ranks, so with a `rank_rule` set, `/wom gaps` lists each account whose rank differs from what the rule gives for its person's days in the clan, counted from their first join ever or their current stint. Ranks the rule doesn't name, such as staff ranks, are left alone. Fix them in game.
+A person's days in the clan come from Wise Old Man's join dates, which RuneLite's clan sync reads from the game, so a role rule on `tenure:` labels ranks Discord by time in the clan. Wise Old Man can't change in-game ranks, so with a `rank_rule` set, `/wom gaps` lists each account whose rank is below what the rule gives for its person's days in the clan, counted from their first join ever or their current stint. The rule is a floor: an account ranked higher, such as a member ranked up early, is left alone, and so are ranks the rule doesn't name, such as staff ranks or one for inactive members. Promote them in game.
 
 ## Instance settings
 
