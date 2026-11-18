@@ -1,0 +1,31 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: teabot_owner
+          POSTGRES_PASSWORD: teabot
+          POSTGRES_DB: teabot
+        ports: ["55432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U teabot_owner -d teabot"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.3
+      - run: uv run pyright
+      - run: uv run pytest -q
+      - run: uv run teabot check .

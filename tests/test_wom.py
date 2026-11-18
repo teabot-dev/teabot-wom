@@ -1,0 +1,201 @@
+"""The wom plugin against a fake Wise Old Man: syncing the group, claims and confirmations, the labels they give,
+renames and merges, the guard on many accounts missing at once, and the rank audit."""
+
+from collections.abc import Iterator
+from datetime import date
+from typing import Any
+
+import discord
+import pytest
+from teabot.testing import FakeButton, FakeChannel, HarnessFactory, Planned, PluginHarness
+
+from teabot_wom import RankRule, RankStep, WomConfig, admin, plugin, report, wom
+from teabot_wom.claims import claim, post
+from teabot_wom.sync import sync
+
+GROUP = 651
+BASE = "https://api.wiseoldman.net/v2"
+NONE = discord.Permissions.none()
+
+
+@pytest.fixture(autouse=True)
+def no_pacing() -> Iterator[None]:
+    wom.pacer.gap = 0
+    yield
+    wom.pacer.gap = None
+
+
+def membership(player_id: int, name: str, rank: str = "sapphire", joined: str = "2024-01-01") -> dict[str, Any]:
+    return {
+        "playerId": player_id,
+        "role": rank,
+        "clientSyncJoinedAt": f"{joined}T00:00:00.000Z",
+        "player": {"id": player_id, "displayName": name, "type": "regular", "status": "active"},
+    }
+
+
+def serve(harness: PluginHarness, members: list[dict[str, Any]], changes: list[dict[str, Any]] | None = None) -> None:
+    harness.web.reply(
+        f"{BASE}/groups/{GROUP}", json_body={"name": "Tea", "updatedAt": "2026-11-17T16:40:53Z", "memberships": members}
+    )
+    harness.web.reply(f"{BASE}/groups/{GROUP}/name-changes?limit=50&offset=0", json_body=changes or [])
+
+
+async def setup(teabot_harness: HarnessFactory, **config: Any) -> PluginHarness:
+    harness = await teabot_harness(plugin)
+    await harness.configure(WomConfig(group_id=GROUP, **config))
+    db: Any = harness.admin
+    await db.execute("INSERT INTO core.directory_state (guild_id, backfilled) VALUES ($1, true)", harness.guild.id)
+    return harness
+
+
+async def run_sync(harness: PluginHarness) -> None:
+    await harness.run_job(sync.bind())
+    await harness.advance(minutes=2)
+    await harness.run_jobs()
+
+
+async def settle(harness: PluginHarness, plan: Planned) -> Planned:
+    """Confirm a plan, and let the labels it changes be written."""
+    await harness.confirm(plan)
+    await harness.advance(minutes=2)
+    await harness.run_jobs()
+    return plan
+
+
+async def confirm_all(harness: PluginHarness) -> Planned:
+    page = await harness.call(report.claims)
+    return await settle(harness, await harness.plan(admin.confirm, claims=[c.id for c in page.claims]))
+
+
+async def labels(harness: PluginHarness, user_id: int) -> list[str]:
+    db: Any = harness.admin
+    found = await db.fetchval(
+        "SELECT labels FROM core.member_labels WHERE guild_id = $1 AND plugin_id = 'wom' AND user_id = $2",
+        harness.guild.id,
+        user_id,
+    )
+    return list(found or [])
+
+
+async def account(harness: PluginHarness, player_id: int) -> Any:
+    db: Any = harness.admin
+    return await db.fetchrow("SELECT * FROM plugin_wom.accounts WHERE player_id = $1", player_id)
+
+
+async def test_a_claim_waits_for_an_admin_then_gives_labels(teabot_harness: HarnessFactory) -> None:
+    harness = await setup(teabot_harness)
+    fred = harness.guild.add_member(NONE, name="fred")
+    serve(harness, [membership(1, "Fred Main", "silver_key"), membership(2, "Fred Iron", "blue_gem")])
+    await run_sync(harness)
+    reply = await harness.as_member(fred).call(claim, names="Fred Main, fred_iron")
+    assert "Claimed Fred Main, fred_iron" in reply
+    assert await labels(harness, fred.id) == []
+    plan = await confirm_all(harness)
+    assert plan.counts == {"confirm": 2}
+    assert await labels(harness, fred.id) == ["in_clan", "linked", "rank:blue_gem", "rank:silver_key"]
+
+
+async def test_an_account_missing_is_away_then_left(teabot_harness: HarnessFactory) -> None:
+    harness = await setup(teabot_harness, away_days=7)
+    fred = harness.guild.add_member(NONE, name="fred")
+    others = [membership(10 + i, f"Other {i}") for i in range(10)]
+    serve(harness, [membership(1, "Fred"), *others])
+    await run_sync(harness)
+    await harness.as_member(fred).call(claim, names="Fred")
+    await confirm_all(harness)
+    serve(harness, others)
+    await run_sync(harness)
+    assert (await account(harness, 1))["state"] == "away"
+    assert "in_clan" in await labels(harness, fred.id)
+    await harness.advance(days=8)
+    await run_sync(harness)
+    assert (await account(harness, 1))["state"] == "left"
+    assert await labels(harness, fred.id) == ["left", "linked"]
+
+
+async def test_many_accounts_missing_at_once_hold_the_sync(teabot_harness: HarnessFactory) -> None:
+    harness = await setup(teabot_harness)
+    everyone = [membership(i, f"Member {i}") for i in range(1, 21)]
+    serve(harness, everyone)
+    await run_sync(harness)
+    serve(harness, everyone[:10])
+    await run_sync(harness)
+    assert (await account(harness, 1))["state"] == "in"
+    await settle(harness, await harness.plan(admin.accept_sync))
+    await harness.run_jobs()
+    assert (await account(harness, 15))["state"] == "away"
+
+
+async def test_a_rename_keeps_the_account_and_its_dates(teabot_harness: HarnessFactory) -> None:
+    harness = await setup(teabot_harness)
+    serve(harness, [membership(1, "Old Name", joined="2023-05-01")])
+    await run_sync(harness)
+    serve(harness, [membership(1, "New Name", joined="2023-05-01")])
+    await run_sync(harness)
+    row = await account(harness, 1)
+    assert (row["name"], list(row["past_names"]), row["joined"]) == ("New Name", ["Old Name"], date(2023, 5, 1))
+
+
+async def test_a_merge_moves_the_vanished_accounts_person_onto_the_survivor(teabot_harness: HarnessFactory) -> None:
+    harness = await setup(teabot_harness)
+    fred = harness.guild.add_member(NONE, name="fred")
+    serve(harness, [membership(1, "Fred", joined="2021-01-01"), membership(2, "Zed")])
+    await run_sync(harness)
+    await harness.as_member(fred).call(claim, names="Fred")
+    await confirm_all(harness)
+    change = {
+        "id": 77,
+        "playerId": 2,
+        "oldName": "Zed",
+        "newName": "Fred",
+        "status": "approved",
+        "createdAt": "2026-11-18T10:00:00Z",
+    }
+    serve(harness, [membership(2, "Fred", joined="2024-06-01")], [change])
+    await run_sync(harness)
+    assert await account(harness, 1) is None
+    survivor = await account(harness, 2)
+    assert survivor["first_joined"] == date(2021, 1, 1)
+    assert survivor["person_id"] is not None
+
+
+async def test_a_rejoin_after_leaving_starts_a_new_stint(teabot_harness: HarnessFactory) -> None:
+    harness = await setup(teabot_harness, away_days=1)
+    others = [membership(10 + i, f"Other {i}") for i in range(10)]
+    serve(harness, [membership(1, "Fred", joined="2020-01-01"), *others])
+    await run_sync(harness)
+    serve(harness, others)
+    await run_sync(harness)
+    await harness.advance(days=2)
+    await run_sync(harness)
+    serve(harness, [membership(1, "Fred", joined="2026-11-01"), *others])
+    await run_sync(harness)
+    row = await account(harness, 1)
+    assert (row["joined"], row["first_joined"]) == (date(2026, 11, 1), date(2020, 1, 1))
+
+
+async def test_the_rank_audit_lists_ranks_the_rule_calls_for(teabot_harness: HarnessFactory) -> None:
+    rule = RankRule(ranks=[RankStep(rank="sapphire", days=0), RankStep(rank="emerald", days=365)])
+    harness = await setup(teabot_harness, rank_rule=rule)
+    fred = harness.guild.add_member(NONE, name="fred")
+    joined = "2020-01-01"
+    serve(harness, [membership(1, "Fred", "sapphire", joined), membership(2, "Staff", "silver_key", joined)])
+    await run_sync(harness)
+    await harness.as_member(fred).call(claim, names="Fred")
+    await confirm_all(harness)
+    gaps = {g.kind: g.examples for g in (await harness.call(report.gaps)).gaps}
+    assert gaps["in-game ranks to change"] == ["Fred: sapphire → emerald"]
+    assert gaps["clan accounts with no member"] == ["Staff"]
+
+
+async def test_the_link_post_asks_for_names_in_a_form(teabot_harness: HarnessFactory) -> None:
+    harness = await setup(teabot_harness)
+    channel = harness.guild.add_channel(FakeChannel(name="link-your-accounts"))
+    serve(harness, [membership(1, "Fred")])
+    await run_sync(harness)
+    await harness.call(post, channel=channel)
+    (sent,) = channel.sent
+    button: FakeButton = sent.buttons[0]
+    reply = await harness.press(button, typed={"names": "Fred"})
+    assert reply.startswith("Claimed Fred")

@@ -1,0 +1,776 @@
+{
+  "commands": {
+    "description": "wom commands",
+    "name": "wom",
+    "options": [
+      {
+        "description": "Let a held sync through: the accounts missing from the group really left.",
+        "name": "accept_sync",
+        "options": [],
+        "type": 1
+      },
+      {
+        "description": "Claim your Wise Old Man accounts: your main and its alts. An admin confirms each claim.",
+        "name": "claim",
+        "options": [
+          {
+            "description": "Your account names, one per line or separated by commas",
+            "max_length": 100,
+            "name": "names",
+            "required": true,
+            "type": 3
+          }
+        ],
+        "type": 1
+      },
+      {
+        "description": "Members' claims waiting for an admin, with their evidence, and suggested links.",
+        "name": "claims",
+        "options": [],
+        "type": 1
+      },
+      {
+        "description": "Confirm members' claims on their accounts, as wom.claims lists them.",
+        "name": "confirm",
+        "options": [
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_1",
+            "required": true,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_2",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_3",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_4",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_5",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_6",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_7",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_8",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_9",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_10",
+            "required": false,
+            "type": 4
+          }
+        ],
+        "type": 1
+      },
+      {
+        "description": "Drop one of your accounts, or a claim waiting for an admin.",
+        "name": "drop",
+        "options": [
+          {
+            "description": "The account's name",
+            "max_length": 12,
+            "name": "name",
+            "required": true,
+            "type": 3
+          }
+        ],
+        "type": 1
+      },
+      {
+        "description": "Forget a member's person, such as one linked by mistake: their links and waiting claims go, so role ",
+        "name": "forget",
+        "options": [
+          {
+            "description": "The member",
+            "name": "member",
+            "required": true,
+            "type": 6
+          }
+        ],
+        "type": 1
+      },
+      {
+        "description": "What needs a person: unlinked clan accounts, competing claims, merges, archives, missing join dates,",
+        "name": "gaps",
+        "options": [],
+        "type": 1
+      },
+      {
+        "description": "Put an account in a person by hand, such as from a spreadsheet: a member, or someone not on Discord.",
+        "name": "link",
+        "options": [
+          {
+            "description": "The account's name",
+            "max_length": 12,
+            "name": "name",
+            "required": true,
+            "type": 3
+          },
+          {
+            "description": "Whose it is",
+            "name": "member",
+            "required": false,
+            "type": 6
+          },
+          {
+            "description": "Or a name for someone not on Discord",
+            "max_length": 100,
+            "name": "note",
+            "required": false,
+            "type": 3
+          },
+          {
+            "description": "When they first joined the clan, as YYYY-MM-DD, if known",
+            "name": "first_joined",
+            "required": false,
+            "type": 3
+          }
+        ],
+        "type": 1
+      },
+      {
+        "description": "Your Wise Old Man accounts, your main and your join dates, as teabot sees them.",
+        "name": "me",
+        "options": [],
+        "type": 1
+      },
+      {
+        "description": "Move every account of a person not on Discord, as wom.people numbers them, into a member's person.",
+        "name": "merge",
+        "options": [
+          {
+            "description": "The member",
+            "name": "into",
+            "required": true,
+            "type": 6
+          },
+          {
+            "description": "The other person's number",
+            "name": "person",
+            "required": true,
+            "type": 4
+          }
+        ],
+        "type": 1
+      },
+      {
+        "description": "People, their accounts, main and join date.",
+        "name": "people",
+        "options": [
+          {
+            "choices": [
+              {
+                "name": "all",
+                "value": "all"
+              },
+              {
+                "name": "no_member",
+                "value": "no_member"
+              },
+              {
+                "name": "in_clan",
+                "value": "in_clan"
+              },
+              {
+                "name": "away",
+                "value": "away"
+              },
+              {
+                "name": "left",
+                "value": "left"
+              }
+            ],
+            "description": "Everyone, those with no member, in the clan, away, or left",
+            "name": "which",
+            "required": false,
+            "type": 3
+          },
+          {
+            "description": "Which page of 50, from 1",
+            "name": "page",
+            "required": false,
+            "type": 4
+          }
+        ],
+        "type": 1
+      },
+      {
+        "description": "Make an account its person's main, which their nickname shows and the rank audit counts from.",
+        "name": "pin_main",
+        "options": [
+          {
+            "description": "The account's name",
+            "max_length": 12,
+            "name": "name",
+            "required": true,
+            "type": 3
+          }
+        ],
+        "type": 1
+      },
+      {
+        "description": "Post the link channel's message, with a button members press to claim their accounts.",
+        "name": "post",
+        "options": [
+          {
+            "description": "Where to post it",
+            "name": "channel",
+            "required": true,
+            "type": 7
+          }
+        ],
+        "type": 1
+      },
+      {
+        "description": "Reject members' claims, as wom.claims lists them.",
+        "name": "reject",
+        "options": [
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_1",
+            "required": true,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_2",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_3",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_4",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_5",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_6",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_7",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_8",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_9",
+            "required": false,
+            "type": 4
+          },
+          {
+            "description": "The claims' numbers, up to ten",
+            "name": "claims_10",
+            "required": false,
+            "type": 4
+          }
+        ],
+        "type": 1
+      },
+      {
+        "description": "Set an account's join dates by hand, such as one Wise Old Man doesn't know, or a wrong import.",
+        "name": "set_joined",
+        "options": [
+          {
+            "description": "The account's name",
+            "max_length": 12,
+            "name": "name",
+            "required": true,
+            "type": 3
+          },
+          {
+            "description": "The current stint's join date, as YYYY-MM-DD",
+            "name": "joined",
+            "required": false,
+            "type": 3
+          },
+          {
+            "description": "The first join ever, as YYYY-MM-DD",
+            "name": "first_joined",
+            "required": false,
+            "type": 3
+          }
+        ],
+        "type": 1
+      },
+      {
+        "description": "Move accounts out of their person into a new one, for someone not on Discord.",
+        "name": "split",
+        "options": [
+          {
+            "description": "The accounts, separated by commas",
+            "max_length": 100,
+            "name": "names",
+            "required": true,
+            "type": 3
+          },
+          {
+            "description": "A name for the new person",
+            "max_length": 100,
+            "name": "note",
+            "required": true,
+            "type": 3
+          }
+        ],
+        "type": 1
+      },
+      {
+        "description": "Take an account out of its person.",
+        "name": "unlink",
+        "options": [
+          {
+            "description": "The account's name",
+            "max_length": 12,
+            "name": "name",
+            "required": true,
+            "type": 3
+          }
+        ],
+        "type": 1
+      }
+    ],
+    "type": 1
+  },
+  "jobs": {
+    "digest": {
+      "properties": {},
+      "title": "WomDigestInput",
+      "type": "object"
+    },
+    "sync": {
+      "properties": {},
+      "title": "WomSyncInput",
+      "type": "object"
+    },
+    "write_labels": {
+      "properties": {},
+      "title": "WomWriteLabelsInput",
+      "type": "object"
+    }
+  },
+  "recurring": {
+    "digest": 604800.0,
+    "sync": 3600.0
+  },
+  "tools": {
+    "wom_accept_sync": {
+      "properties": {
+        "confirm": {
+          "description": "The confirm value of a plan this tool returned. Leave it out to get a plan.",
+          "type": "string"
+        }
+      },
+      "title": "WomAcceptSyncInput",
+      "type": "object"
+    },
+    "wom_claim": {
+      "properties": {
+        "names": {
+          "description": "Your account names, one per line or separated by commas",
+          "maxLength": 100,
+          "title": "Names",
+          "type": "string"
+        }
+      },
+      "required": [
+        "names"
+      ],
+      "title": "WomClaimInput",
+      "type": "object"
+    },
+    "wom_claims": {
+      "properties": {},
+      "title": "WomClaimsInput",
+      "type": "object"
+    },
+    "wom_confirm": {
+      "$defs": {
+        "Claims": {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 10,
+          "type": "array"
+        }
+      },
+      "properties": {
+        "claims": {
+          "$ref": "#/$defs/Claims",
+          "description": "The claims' numbers, up to ten"
+        },
+        "confirm": {
+          "description": "The confirm value of a plan this tool returned. Leave it out to get a plan.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claims"
+      ],
+      "title": "WomConfirmInput",
+      "type": "object"
+    },
+    "wom_drop": {
+      "properties": {
+        "name": {
+          "description": "The account's name",
+          "maxLength": 12,
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "WomDropInput",
+      "type": "object"
+    },
+    "wom_forget": {
+      "properties": {
+        "confirm": {
+          "description": "The confirm value of a plan this tool returned. Leave it out to get a plan.",
+          "type": "string"
+        },
+        "member": {
+          "description": "The member",
+          "pattern": "^[1-9][0-9]{0,19}$",
+          "title": "Member",
+          "type": "string"
+        }
+      },
+      "required": [
+        "member"
+      ],
+      "title": "WomForgetInput",
+      "type": "object"
+    },
+    "wom_gaps": {
+      "properties": {},
+      "title": "WomGapsInput",
+      "type": "object"
+    },
+    "wom_link": {
+      "$defs": {
+        "Name": {
+          "maxLength": 12,
+          "type": "string"
+        }
+      },
+      "properties": {
+        "confirm": {
+          "description": "The confirm value of a plan this tool returned. Leave it out to get a plan.",
+          "type": "string"
+        },
+        "first_joined": {
+          "anyOf": [
+            {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "When they first joined the clan, as YYYY-MM-DD, if known",
+          "title": "First Joined"
+        },
+        "member": {
+          "anyOf": [
+            {
+              "pattern": "^[1-9][0-9]{0,19}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Whose it is",
+          "title": "Member"
+        },
+        "name": {
+          "$ref": "#/$defs/Name",
+          "description": "The account's name"
+        },
+        "note": {
+          "default": "",
+          "description": "Or a name for someone not on Discord",
+          "maxLength": 100,
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "WomLinkInput",
+      "type": "object"
+    },
+    "wom_me": {
+      "properties": {},
+      "title": "WomMeInput",
+      "type": "object"
+    },
+    "wom_merge": {
+      "properties": {
+        "confirm": {
+          "description": "The confirm value of a plan this tool returned. Leave it out to get a plan.",
+          "type": "string"
+        },
+        "into": {
+          "description": "The member",
+          "pattern": "^[1-9][0-9]{0,19}$",
+          "title": "Into",
+          "type": "string"
+        },
+        "person": {
+          "description": "The other person's number",
+          "title": "Person",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "into",
+        "person"
+      ],
+      "title": "WomMergeInput",
+      "type": "object"
+    },
+    "wom_people": {
+      "$defs": {
+        "Which": {
+          "enum": [
+            "all",
+            "no_member",
+            "in_clan",
+            "away",
+            "left"
+          ],
+          "type": "string"
+        }
+      },
+      "properties": {
+        "page": {
+          "default": 1,
+          "description": "Which page of 50, from 1",
+          "title": "Page",
+          "type": "integer"
+        },
+        "which": {
+          "$ref": "#/$defs/Which",
+          "default": "all",
+          "description": "Everyone, those with no member, in the clan, away, or left"
+        }
+      },
+      "title": "WomPeopleInput",
+      "type": "object"
+    },
+    "wom_pin_main": {
+      "$defs": {
+        "Name": {
+          "maxLength": 12,
+          "type": "string"
+        }
+      },
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/Name",
+          "description": "The account's name"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "WomPinMainInput",
+      "type": "object"
+    },
+    "wom_post": {
+      "properties": {
+        "channel": {
+          "description": "Where to post it",
+          "pattern": "^[1-9][0-9]{0,19}$",
+          "title": "Channel",
+          "type": "string"
+        }
+      },
+      "required": [
+        "channel"
+      ],
+      "title": "WomPostInput",
+      "type": "object"
+    },
+    "wom_reject": {
+      "$defs": {
+        "Claims": {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 10,
+          "type": "array"
+        }
+      },
+      "properties": {
+        "claims": {
+          "$ref": "#/$defs/Claims",
+          "description": "The claims' numbers, up to ten"
+        }
+      },
+      "required": [
+        "claims"
+      ],
+      "title": "WomRejectInput",
+      "type": "object"
+    },
+    "wom_set_joined": {
+      "$defs": {
+        "Name": {
+          "maxLength": 12,
+          "type": "string"
+        }
+      },
+      "properties": {
+        "first_joined": {
+          "anyOf": [
+            {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The first join ever, as YYYY-MM-DD",
+          "title": "First Joined"
+        },
+        "joined": {
+          "anyOf": [
+            {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The current stint's join date, as YYYY-MM-DD",
+          "title": "Joined"
+        },
+        "name": {
+          "$ref": "#/$defs/Name",
+          "description": "The account's name"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "WomSetJoinedInput",
+      "type": "object"
+    },
+    "wom_split": {
+      "properties": {
+        "confirm": {
+          "description": "The confirm value of a plan this tool returned. Leave it out to get a plan.",
+          "type": "string"
+        },
+        "names": {
+          "description": "The accounts, separated by commas",
+          "maxLength": 100,
+          "title": "Names",
+          "type": "string"
+        },
+        "note": {
+          "description": "A name for the new person",
+          "maxLength": 100,
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "names",
+        "note"
+      ],
+      "title": "WomSplitInput",
+      "type": "object"
+    },
+    "wom_unlink": {
+      "$defs": {
+        "Name": {
+          "maxLength": 12,
+          "type": "string"
+        }
+      },
+      "properties": {
+        "confirm": {
+          "description": "The confirm value of a plan this tool returned. Leave it out to get a plan.",
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/$defs/Name",
+          "description": "The account's name"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "WomUnlinkInput",
+      "type": "object"
+    }
+  }
+}
