@@ -82,7 +82,7 @@ A hub plugin, `wom`, in its own repo (teabot-dev/teabot-wom). It depends on no o
 
 ### Claims
 
-- A member's claim on an account is `waiting`, `confirmed` or `rejected`. A waiting claim on an account not yet in the group is checked at each sync and expires after 14 days. A claim on an account in someone else's person waits, flagged in `wom.gaps`, and changes nothing until an admin acts. A member makes at most ten claims a day.
+- A member's claim on an account is `waiting`, `confirmed` or `rejected`. A claim names an account in the group, in the clan or away; a name that isn't is turned away at once, with the group's closest names, such as `Green Clog` for "gren clog", and one who joined or renamed recently tries again once WOM has caught up. A claim on an account in someone else's person waits, flagged in `wom.gaps`, and changes nothing until an admin acts. A member makes at most ten claims a day.
 - **Confirming a claim** puts the account in the member's person, making one if they have none. When the account belongs to a person without a member, such as one with only a note, confirming merges that person into the member's.
 - **Every claim waits for an admin.** A waiting claim shows in `/wom me`, is followed through renames by its WOM ID, and appears in the rank audit marked unconfirmed, so the audit never asks an admin to promote an account on a claim alone. It feeds nothing, no main, dates or labels, until confirmed. The digest lists waiting claims for an admin, or an assistant with one, to confirm in batches.
 - Rejected and expired claims are deleted after 30 days.
@@ -127,7 +127,7 @@ For members:
 
 | Action | What it does |
 |---|---|
-| `/wom claim names:` | Claim up to five accounts, a main and its alts, as names one per line or separated by commas; the "Link accounts" button opens the same action. Each claim waits for an admin. A claim on an account not yet in the group waits up to 14 days. |
+| `/wom claim names:` | Claim up to five accounts, a main and its alts, as names one per line or separated by commas; the "Link accounts" button opens the same action. Each claim waits for an admin. A name not in the group is turned away, with the closest names in it. |
 | `/wom drop name:` | Drop one of your accounts or claims, at once. |
 | `/wom me` | Your accounts, your main and your join dates, as the plugin sees them, with a link to WOM's name-change form. |
 

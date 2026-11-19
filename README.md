@@ -26,7 +26,7 @@ When more than a tenth of the clan's accounts, and more than five, go missing at
 
 | Command | What it does |
 |---|---|
-| `/wom claim` | Opens a form to claim your accounts, your main and its alts, one per line or separated by commas. An admin confirms each one. The link post's **Link accounts** button does the same. |
+| `/wom claim` | Opens a form to claim your accounts, your main and its alts, one per line or separated by commas. Each must be in the clan's group; for a name that isn't, teabot suggests the closest ones. An admin confirms each claim. The link post's **Link accounts** button does the same. |
 | `/wom drop name:` | Drop one of your accounts, or a claim still waiting. |
 | `/wom me` | Your accounts, your main and your join dates, with a link to Wise Old Man's form for a rename it missed. |
 

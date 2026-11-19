@@ -258,8 +258,20 @@ async def test_my_accounts_show_which_are_linked_and_which_wait(teabot_harness: 
     await run_sync(harness)
     await harness.as_member(fred).call(claim, names="Fred Main")
     await confirm_all(harness)
-    await harness.as_member(fred).call(claim, names="fred iron\nFred Pure")
+    await harness.as_member(fred).call(claim, names="fred iron")
     shown = await harness.as_member(fred).call(me)
     assert "🟢 `Fred Main` · main · sapphire · in the clan · since 1 January 2024" in shown
     assert "🟡 `Fred Iron` · waiting for an admin" in shown
-    assert "🟡 `Fred Pure` · waiting for an admin" in shown
+
+
+async def test_a_name_outside_the_group_is_turned_away_with_close_names(teabot_harness: HarnessFactory) -> None:
+    harness = await setup(teabot_harness)
+    fred = harness.guild.add_member(NONE, name="fred")
+    serve(harness, [membership(1, "Green Clog"), membership(2, "Fred")])
+    await run_sync(harness)
+    reply = await harness.as_member(fred).call(claim, names="gren clog\nfred\ndsfgsdfg")
+    assert "Claimed `Fred`" in reply
+    assert "`gren clog` isn't in the clan's Wise Old Man group. Did you mean `Green Clog`?" in reply
+    assert "`dsfgsdfg` isn't in the clan's Wise Old Man group. If you joined or renamed recently" in reply
+    page = await harness.call(report.claims)
+    assert [str(c.name) for c in page.claims] == ["Fred"]
