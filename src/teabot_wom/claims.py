@@ -18,9 +18,9 @@ from teabot_wom.wom import NAME_CHANGE_FORM
 
 CLAIMS_AT_ONCE = 5
 CLAIMS_A_DAY = 10
-# Discord has no coloured text, so `/wom me` marks each account's status with a yellow or green animal.
-WAITING = "🐥"
-LINKED = "🐢"
+# Discord has no coloured text, so `/wom me` marks each account's status with a coloured circle.
+WAITING = "🟡"
+LINKED = "🟢"
 STATES = {
     "in": "in the clan",
     "away": "missing from the group for now",
@@ -132,7 +132,6 @@ async def me(ctx: Ctx) -> str:
             "**Your accounts**",
             *lines,
             "",
-            f"{LINKED} linked · {WAITING} waiting for an admin",
             f"Renamed and teabot missed it? Tell Wise Old Man: <{NAME_CHANGE_FORM}>",
         ]
     )

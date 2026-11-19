@@ -260,6 +260,6 @@ async def test_my_accounts_show_which_are_linked_and_which_wait(teabot_harness: 
     await confirm_all(harness)
     await harness.as_member(fred).call(claim, names="Fred Iron\nFred Pure")
     shown = await harness.as_member(fred).call(me)
-    assert "🐢 `Fred Main` · main · sapphire · in the clan · since 1 January 2024" in shown
-    assert "🐥 `Fred Iron` · waiting for an admin" in shown
-    assert "🐥 `Fred Pure` · waiting for an admin" in shown
+    assert "🟢 `Fred Main` · main · sapphire · in the clan · since 1 January 2024" in shown
+    assert "🟡 `Fred Iron` · waiting for an admin" in shown
+    assert "🟡 `Fred Pure` · waiting for an admin" in shown
