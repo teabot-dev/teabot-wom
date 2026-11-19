@@ -89,7 +89,7 @@ async def test_a_claim_waits_for_an_admin_then_gives_labels(teabot_harness: Harn
     serve(harness, [membership(1, "Fred Main", "silver_key"), membership(2, "Fred Iron", "blue_gem")])
     await run_sync(harness)
     reply = await harness.as_member(fred).call(claim, names="Fred Main, fred_iron")
-    assert "Claimed `Fred Main`, `fred_iron`" in reply
+    assert "Claimed `Fred Main`, `Fred Iron`" in reply
     assert await labels(harness, fred.id) == []
     plan = await confirm_all(harness)
     assert plan.counts == {"confirm": 2}
@@ -258,7 +258,7 @@ async def test_my_accounts_show_which_are_linked_and_which_wait(teabot_harness: 
     await run_sync(harness)
     await harness.as_member(fred).call(claim, names="Fred Main")
     await confirm_all(harness)
-    await harness.as_member(fred).call(claim, names="Fred Iron\nFred Pure")
+    await harness.as_member(fred).call(claim, names="fred iron\nFred Pure")
     shown = await harness.as_member(fred).call(me)
     assert "🟢 `Fred Main` · main · sapphire · in the clan · since 1 January 2024" in shown
     assert "🟡 `Fred Iron` · waiting for an admin" in shown

@@ -68,6 +68,10 @@ async def claim(ctx: Ctx, names: LongText) -> str:
             )
             if k in owned or waiting:
                 continue
+            # An account already in the group is claimed by its own name, whatever the member's spelling.
+            name = (
+                await tx.fetchval("SELECT name FROM accounts WHERE guild_id = $1 AND key = $2", ctx.guild.id, k) or name
+            )
             await tx.execute(
                 "INSERT INTO claims (guild_id, user_id, name, key) VALUES ($1, $2, $3, $4)", ctx.guild.id, me, name, k
             )
@@ -119,7 +123,9 @@ async def me(ctx: Ctx) -> str:
     waiting = [
         str(r["name"])
         for r in await ctx.db.fetch(
-            "SELECT name FROM claims WHERE guild_id = $1 AND user_id = $2 AND state = 'waiting' ORDER BY id",
+            "SELECT coalesce(a.name, c.name) AS name FROM claims c LEFT JOIN accounts a "
+            "ON a.guild_id = c.guild_id AND a.key = c.key "
+            "WHERE c.guild_id = $1 AND c.user_id = $2 AND c.state = 'waiting' ORDER BY c.id",
             ctx.guild.id,
             ctx.actor.user_id,
         )

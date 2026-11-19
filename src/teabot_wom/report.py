@@ -101,7 +101,7 @@ async def claims(ctx: Ctx) -> ClaimsPage:
             Evidence(
                 id=w.id,
                 member=w.user_id,
-                name=w.name,
+                name=account.name if account else w.name,
                 in_group=account is not None and account.present,
                 rank=account.rank if account else None,
                 joined=account.joined if account else None,
