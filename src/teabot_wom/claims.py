@@ -8,20 +8,29 @@ from datetime import timedelta
 from typing import Annotated
 
 from pydantic import Field
-from teabot.sdk import ActionError, Button, TextChannel
+from teabot.sdk import ActionError, Button, LongText, TextChannel
 
 from teabot_wom import Ctx, plugin
 from teabot_wom.names import NAME_MAX, key, names_in
-from teabot_wom.people import accounts_of, main_of, person_of
+from teabot_wom.people import Account, accounts_of, main_of, person_of
 from teabot_wom.sync import relabel
 from teabot_wom.wom import NAME_CHANGE_FORM
 
 CLAIMS_AT_ONCE = 5
 CLAIMS_A_DAY = 10
+# Discord has no coloured text, so `/wom me` marks each account's status with a yellow or green animal.
+WAITING = "🐥"
+LINKED = "🐢"
+STATES = {
+    "in": "in the clan",
+    "away": "missing from the group for now",
+    "left": "left the clan",
+    "outside": "not in the clan",
+}
 
 
 @plugin.action()
-async def claim(ctx: Ctx, names: Annotated[str, Field(max_length=100)]) -> str:
+async def claim(ctx: Ctx, names: LongText) -> str:
     """Claim your Wise Old Man accounts: your main and its alts. An admin confirms each claim.
 
     Args:
@@ -65,7 +74,8 @@ async def claim(ctx: Ctx, names: Annotated[str, Field(max_length=100)]) -> str:
             made.append(name)
     if not made:
         return "Those are already yours, or already waiting for an admin."
-    return f"Claimed {', '.join(made)}. An admin confirms each claim, usually within a day."
+    listed = ", ".join(f"`{_plain(n)}`" for n in made)
+    return f"Claimed {listed}. An admin confirms each claim, usually within a day. See them with `/wom me`."
 
 
 @plugin.action()
@@ -105,10 +115,7 @@ async def me(ctx: Ctx) -> str:
     if person is not None:
         accounts = await accounts_of(ctx.db, ctx.guild.id, person.id)
         main = main_of(person, accounts)
-        for a in accounts:
-            star = " (main)" if main is not None and a.player_id == main.player_id else ""
-            since = f", joined {a.joined}" if a.joined else ""
-            lines.append(f"- **{a.name}**{star}: {a.rank or 'no rank'}, {a.state}{since}")
+        lines += [_line(a, main is not None and a.player_id == main.player_id) for a in accounts]
     waiting = [
         str(r["name"])
         for r in await ctx.db.fetch(
@@ -117,11 +124,35 @@ async def me(ctx: Ctx) -> str:
             ctx.actor.user_id,
         )
     ]
-    lines += [f"- {n}: waiting for an admin" for n in waiting]
+    lines += [f"{WAITING} `{_plain(n)}` · waiting for an admin" for n in waiting]
     if not lines:
         return "You have no accounts linked yet. Claim them with `/wom claim`."
-    lines.append(f"Renamed and teabot missed it? Tell Wise Old Man: {NAME_CHANGE_FORM}")
-    return "\n".join(lines)
+    return "\n".join(
+        [
+            "**Your accounts**",
+            *lines,
+            "",
+            f"{LINKED} linked · {WAITING} waiting for an admin",
+            f"Renamed and teabot missed it? Tell Wise Old Man: <{NAME_CHANGE_FORM}>",
+        ]
+    )
+
+
+def _plain(name: str) -> str:
+    """A name safe inside backticks."""
+    return name.replace("`", "")
+
+
+def _line(a: Account, main: bool) -> str:
+    parts = [
+        f"{LINKED} `{_plain(a.name)}`",
+        *(["main"] if main else []),
+        a.rank or "no rank",
+        STATES.get(a.state, a.state),
+    ]
+    if a.joined and a.present:
+        parts.append(f"since {a.joined:%-d %B %Y}")
+    return " · ".join(parts)
 
 
 @plugin.action(needs="manage_guild")
@@ -133,7 +164,7 @@ async def post(ctx: Ctx, channel: TextChannel) -> str:
     """
     await channel.send(
         "**Link your game accounts**\n"
-        "Press **Link accounts** and type every account you play here, your main and its alts. An admin confirms "
+        "Press **Link accounts** and type every account you play, your main and its alts, one per line. An admin confirms "
         "each one, usually within a day, so admins can see who is who in the clan.",
         buttons=[
             Button(claim.asking(), label="Link accounts", style="primary"),

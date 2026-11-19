@@ -10,7 +10,7 @@ import pytest
 from teabot.testing import FakeButton, FakeChannel, HarnessFactory, Planned, PluginHarness
 
 from teabot_wom import RankRule, RankStep, WomConfig, admin, plugin, report, wom
-from teabot_wom.claims import claim, post
+from teabot_wom.claims import claim, me, post
 from teabot_wom.sync import sync
 
 GROUP = 651
@@ -89,7 +89,7 @@ async def test_a_claim_waits_for_an_admin_then_gives_labels(teabot_harness: Harn
     serve(harness, [membership(1, "Fred Main", "silver_key"), membership(2, "Fred Iron", "blue_gem")])
     await run_sync(harness)
     reply = await harness.as_member(fred).call(claim, names="Fred Main, fred_iron")
-    assert "Claimed Fred Main, fred_iron" in reply
+    assert "Claimed `Fred Main`, `fred_iron`" in reply
     assert await labels(harness, fred.id) == []
     plan = await confirm_all(harness)
     assert plan.counts == {"confirm": 2}
@@ -222,7 +222,7 @@ async def test_the_link_post_asks_for_names_in_a_form(teabot_harness: HarnessFac
     (sent,) = channel.sent
     button: FakeButton = sent.buttons[0]
     reply = await harness.press(button, typed={"names": "Fred"})
-    assert reply.startswith("Claimed Fred")
+    assert reply.startswith("Claimed `Fred`")
 
 
 async def test_a_suggestion_says_which_name_matched(teabot_harness: HarnessFactory) -> None:
@@ -249,3 +249,17 @@ async def test_gaps_say_when_no_sync_has_run(teabot_harness: HarnessFactory) -> 
     serve(harness, [membership(1, "Fred")])
     await run_sync(harness)
     assert (await harness.call(report.gaps)).last_sync is not None
+
+
+async def test_my_accounts_show_which_are_linked_and_which_wait(teabot_harness: HarnessFactory) -> None:
+    harness = await setup(teabot_harness)
+    fred = harness.guild.add_member(NONE, name="fred")
+    serve(harness, [membership(1, "Fred Main", joined="2024-01-01"), membership(2, "Fred Iron")])
+    await run_sync(harness)
+    await harness.as_member(fred).call(claim, names="Fred Main")
+    await confirm_all(harness)
+    await harness.as_member(fred).call(claim, names="Fred Iron\nFred Pure")
+    shown = await harness.as_member(fred).call(me)
+    assert "🐢 `Fred Main` · main · sapphire · in the clan · since 1 January 2024" in shown
+    assert "🐥 `Fred Iron` · waiting for an admin" in shown
+    assert "🐥 `Fred Pure` · waiting for an admin" in shown

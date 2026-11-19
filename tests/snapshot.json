@@ -12,15 +12,7 @@
       {
         "description": "Claim your Wise Old Man accounts: your main and its alts. An admin confirms each claim.",
         "name": "claim",
-        "options": [
-          {
-            "description": "Your account names, one per line or separated by commas",
-            "max_length": 100,
-            "name": "names",
-            "required": true,
-            "type": 3
-          }
-        ],
+        "options": [],
         "type": 1
       },
       {
@@ -425,7 +417,7 @@
       "properties": {
         "names": {
           "description": "Your account names, one per line or separated by commas",
-          "maxLength": 100,
+          "maxLength": 4000,
           "title": "Names",
           "type": "string"
         }
