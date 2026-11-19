@@ -38,7 +38,7 @@ These need Manage Server, and also work for AI assistants and the service API.
 |---|---|
 | `/wom claims` | Claims waiting for you, with what supports each: whether the account is in the group, its rank, and which of the member's Discord names match it. Also suggests unlinked accounts a member's name matches. |
 | `/wom confirm` and `/wom reject` | Settle claims by their numbers, up to ten at once. Confirming shows a plan of each member's labels before and after. |
-| `/wom link` and `/wom unlink` | Put an account in a person by hand, a member or someone not on Discord, with their first join date if you know it, or take it out. |
+| `/wom link` and `/wom unlink` | Put up to ten accounts, such as a main and its alts, in one person by hand, a member or someone not on Discord, with their first join date if you know it, in one plan; or take an account out. |
 | `/wom merge` and `/wom split` | Merge someone not on Discord into a member, or move accounts out into a new person. |
 | `/wom forget` | Forget a member linked by mistake. |
 | `/wom pin_main` | Choose a person's main, in place of the account that joined first. |

@@ -1,6 +1,6 @@
 [project]
 name = "teabot-wom"
-version = "1.0.7"
+version = "1.1.0"
 description = "Wise Old Man for teabot: Discord members link their game accounts, which group into people, follow renames, and give labels that role rules match."
 readme = "README.md"
 license = "MIT"

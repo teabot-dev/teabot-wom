@@ -138,7 +138,7 @@ For admins, also over MCP and the service API:
 | `wom.claims` | read | Waiting claims and suggestions, with their evidence. |
 | `wom.confirm` | destructive | Confirm claims, up to ten at once. Its plan lists each member's label changes, since through rules they move Discord roles. |
 | `wom.reject` | write | Reject claims. |
-| `wom.link` | destructive | Put up to 50 accounts in people directly, refusing one already in another person, which `wom.merge` handles, with their `first_joined` when known, such as from a spreadsheet, with a plan of the label changes. Any WOM player, looked up by name when outside the group. |
+| `wom.link` | destructive | Put up to ten accounts in one person directly, in one plan, refusing one already in another person, which `wom.merge` handles, with their `first_joined` when known, such as from a spreadsheet, with a plan of the label changes. Any WOM player, looked up by name when outside the group. |
 | `wom.unlink`, `wom.forget` | destructive | Take an account out of a person, or delete a person, with a plan of the label changes. |
 | `wom.merge`, `wom.split` | destructive | Merge two people, or move accounts out of a person into a new one, with a plan of the label changes. Merging two people who both have a member is refused. |
 | `wom.pin_main`, `wom.set_joined` | destructive | Pin a person's main, or set an account's `joined` or `first_joined` by hand, with a plan of the label changes. |

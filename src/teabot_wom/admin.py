@@ -31,6 +31,7 @@ from teabot_wom.sync import relabel, state_of
 DAY = r"^\d{4}-\d{2}-\d{2}$"
 type Name = Annotated[str, Field(max_length=NAME_MAX)]
 type Claims = Annotated[list[int], Field(max_length=10)]
+type Names = Annotated[list[Name], Field(min_length=1, max_length=10)]
 
 
 class Claim(BaseModel):
@@ -149,32 +150,21 @@ async def _account_or_player(ctx: Ctx, name: str) -> Account | wom.Member:
 @plugin.action(risk=DESTRUCTIVE, needs="manage_guild")
 async def link(
     ctx: Ctx,
-    name: Name,
+    names: Names,
     member: Member | None = None,
     note: Annotated[str, Field(max_length=100)] = "",
     first_joined: Annotated[str | None, Field(pattern=DAY)] = None,
 ) -> str:
-    """Put an account in a person by hand, such as from a spreadsheet: a member, or someone not on Discord.
+    """Put accounts in one person by hand, such as from a spreadsheet: a member, or someone not on Discord.
 
     Args:
-        name: The account's name
-        member: Whose it is
+        names: The accounts' names, up to ten, such as a main and its alts
+        member: Whose they are
         note: Or a name for someone not on Discord
-        first_joined: When they first joined the clan, as YYYY-MM-DD, if known
+        first_joined: When they first joined the clan, as YYYY-MM-DD, if known; it applies to every account given
     """
-    found = await _account_or_player(ctx, name)
+    found = await _accounts_to_link(ctx, names)
     async with ctx.db.transaction() as tx:
-        if isinstance(found, wom.Member):
-            await tx.execute(
-                "INSERT INTO accounts (guild_id, player_id, name, key, type, status, state) "
-                "VALUES ($1, $2, $3, $4, $5, $6, 'outside') ON CONFLICT DO NOTHING",
-                ctx.guild.id,
-                found.player_id,
-                found.name,
-                key(found.name),
-                found.type,
-                found.status,
-            )
         if member is not None:
             person = await ensure_person(tx, ctx.guild.id, member.id)
         else:
@@ -183,32 +173,58 @@ async def link(
                 person = await tx.fetchval(
                     int, "INSERT INTO people (guild_id, note) VALUES ($1, $2) RETURNING id", ctx.guild.id, note
                 )
-        await tx.execute(
-            "UPDATE accounts SET person_id = $3, first_joined = coalesce($4, first_joined), "
-            "first_joined_by_admin = first_joined_by_admin OR $4 IS NOT NULL WHERE guild_id = $1 AND player_id = $2 "
-            "AND (person_id IS NULL OR person_id = $3)",
-            ctx.guild.id,
-            found.player_id,
-            person,
-            date.fromisoformat(first_joined) if first_joined else None,
-        )
+        for account in found:
+            if isinstance(account, Account) and account.person_id not in (None, person):
+                raise ActionError(f"{account.name} belongs to another person; wom.merge moves accounts between people.")
+            if isinstance(account, wom.Member):
+                await tx.execute(
+                    "INSERT INTO accounts (guild_id, player_id, name, key, type, status, state) "
+                    "VALUES ($1, $2, $3, $4, $5, $6, 'outside') ON CONFLICT DO NOTHING",
+                    ctx.guild.id,
+                    account.player_id,
+                    account.name,
+                    key(account.name),
+                    account.type,
+                    account.status,
+                )
+            await tx.execute(
+                "UPDATE accounts SET person_id = $3, first_joined = coalesce($4, first_joined), "
+                "first_joined_by_admin = first_joined_by_admin OR $4 IS NOT NULL "
+                "WHERE guild_id = $1 AND player_id = $2",
+                ctx.guild.id,
+                account.player_id,
+                person,
+                date.fromisoformat(first_joined) if first_joined else None,
+            )
         await relabel(tx, ctx)
-    return f"Linked {found.name}."
+    return f"Linked {', '.join(a.name for a in found)}."
+
+
+async def _accounts_to_link(ctx: Ctx, names: list[str]) -> list[Account | wom.Member]:
+    """Each named account once, from the group or, failing that, from WOM."""
+    found: list[Account | wom.Member] = []
+    for name in names:
+        account = await _account_or_player(ctx, name)
+        if all(a.player_id != account.player_id for a in found):
+            found.append(account)
+    return found
 
 
 @link.plan
 async def plan_link(
-    ctx: Ctx, name: Name, member: Member | None = None, note: str = "", first_joined: str | None = None
+    ctx: Ctx, names: Names, member: Member | None = None, note: str = "", first_joined: str | None = None
 ) -> Diff:
-    found = await _account_or_player(ctx, name)
+    found = await _accounts_to_link(ctx, names)
     person, before, who = await _target(ctx, member, note)
-    if isinstance(found, Account) and found.person_id is not None and found.person_id != person:
-        raise ActionError(f"{found.name} belongs to another person; wom.merge moves accounts between people.")
-    added = found if isinstance(found, Account) else None
-    after = [*before, added] if added is not None else before
+    for account in found:
+        if isinstance(account, Account) and account.person_id not in (None, person):
+            raise ActionError(f"{account.name} belongs to another person; wom.merge moves accounts between people.")
+    owned = {a.player_id for a in before}
+    added = [a for a in found if isinstance(a, Account) and a.player_id not in owned]
     since = f", first joined {first_joined}" if first_joined else ""
-    detail = change_text(ctx, before if person is not None else None, after) + since
-    return Diff(entries=[DiffEntry(change="link", target=f"{who}: {found.name}", detail=detail)])
+    detail = change_text(ctx, before if person is not None else None, [*before, *added]) + since
+    listed = ", ".join(a.name for a in found)
+    return Diff(entries=[DiffEntry(change="link", target=f"{who}: {listed}", detail=detail)])
 
 
 @plugin.action(risk=DESTRUCTIVE, needs="manage_guild")

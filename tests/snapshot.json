@@ -122,18 +122,81 @@
         "type": 1
       },
       {
-        "description": "Put an account in a person by hand, such as from a spreadsheet: a member, or someone not on Discord.",
+        "description": "Put accounts in one person by hand, such as from a spreadsheet: a member, or someone not on Discord.",
         "name": "link",
         "options": [
           {
-            "description": "The account's name",
+            "description": "The accounts' names, up to ten, such as a main and its alts",
             "max_length": 12,
-            "name": "name",
+            "name": "names_1",
             "required": true,
             "type": 3
           },
           {
-            "description": "Whose it is",
+            "description": "The accounts' names, up to ten, such as a main and its alts",
+            "max_length": 12,
+            "name": "names_2",
+            "required": false,
+            "type": 3
+          },
+          {
+            "description": "The accounts' names, up to ten, such as a main and its alts",
+            "max_length": 12,
+            "name": "names_3",
+            "required": false,
+            "type": 3
+          },
+          {
+            "description": "The accounts' names, up to ten, such as a main and its alts",
+            "max_length": 12,
+            "name": "names_4",
+            "required": false,
+            "type": 3
+          },
+          {
+            "description": "The accounts' names, up to ten, such as a main and its alts",
+            "max_length": 12,
+            "name": "names_5",
+            "required": false,
+            "type": 3
+          },
+          {
+            "description": "The accounts' names, up to ten, such as a main and its alts",
+            "max_length": 12,
+            "name": "names_6",
+            "required": false,
+            "type": 3
+          },
+          {
+            "description": "The accounts' names, up to ten, such as a main and its alts",
+            "max_length": 12,
+            "name": "names_7",
+            "required": false,
+            "type": 3
+          },
+          {
+            "description": "The accounts' names, up to ten, such as a main and its alts",
+            "max_length": 12,
+            "name": "names_8",
+            "required": false,
+            "type": 3
+          },
+          {
+            "description": "The accounts' names, up to ten, such as a main and its alts",
+            "max_length": 12,
+            "name": "names_9",
+            "required": false,
+            "type": 3
+          },
+          {
+            "description": "The accounts' names, up to ten, such as a main and its alts",
+            "max_length": 12,
+            "name": "names_10",
+            "required": false,
+            "type": 3
+          },
+          {
+            "description": "Whose they are",
             "name": "member",
             "required": false,
             "type": 6
@@ -146,7 +209,7 @@
             "type": 3
           },
           {
-            "description": "When they first joined the clan, as YYYY-MM-DD, if known",
+            "description": "When they first joined the clan, as YYYY-MM-DD, if known; it applies to every account given",
             "name": "first_joined",
             "required": false,
             "type": 3
@@ -503,6 +566,14 @@
         "Name": {
           "maxLength": 12,
           "type": "string"
+        },
+        "Names": {
+          "items": {
+            "$ref": "#/$defs/Name"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array"
         }
       },
       "properties": {
@@ -521,7 +592,7 @@
             }
           ],
           "default": null,
-          "description": "When they first joined the clan, as YYYY-MM-DD, if known",
+          "description": "When they first joined the clan, as YYYY-MM-DD, if known; it applies to every account given",
           "title": "First Joined"
         },
         "member": {
@@ -535,12 +606,12 @@
             }
           ],
           "default": null,
-          "description": "Whose it is",
+          "description": "Whose they are",
           "title": "Member"
         },
-        "name": {
-          "$ref": "#/$defs/Name",
-          "description": "The account's name"
+        "names": {
+          "$ref": "#/$defs/Names",
+          "description": "The accounts' names, up to ten, such as a main and its alts"
         },
         "note": {
           "default": "",
@@ -551,7 +622,7 @@
         }
       },
       "required": [
-        "name"
+        "names"
       ],
       "title": "WomLinkInput",
       "type": "object"

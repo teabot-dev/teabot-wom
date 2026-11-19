@@ -275,3 +275,24 @@ async def test_a_name_outside_the_group_is_turned_away_with_close_names(teabot_h
     assert "`dsfgsdfg` isn't in the clan's Wise Old Man group. If you joined or renamed recently" in reply
     page = await harness.call(report.claims)
     assert [str(c.name) for c in page.claims] == ["Fred"]
+
+
+async def test_an_admin_links_a_main_and_its_alts_in_one_plan(teabot_harness: HarnessFactory) -> None:
+    rule = RankRule(ranks=[RankStep(rank="sapphire", days=0), RankStep(rank="emerald", days=365)])
+    harness = await setup(teabot_harness, rank_rule=rule)
+    kala = harness.guild.add_member(NONE, name="kala")
+    serve(
+        harness,
+        [
+            membership(1, "OG Kala", "sapphire", "2020-01-01"),
+            membership(2, "Drunk Kala", "sapphire", "2026-10-01"),
+            membership(3, "OF Kala", "burnt", "2023-01-01"),
+        ],
+    )
+    await run_sync(harness)
+    plan = await harness.plan(admin.link, names=["OG Kala", "drunk kala", "OF Kala"], member=kala)
+    assert plan.counts == {"link": 1}
+    await settle(harness, plan)
+    assert await labels(harness, kala.id) == ["in_clan", "linked", "rank:burnt", "rank:sapphire", "tenure:emerald"]
+    gaps = {g.kind: g.examples for g in (await harness.call(report.gaps)).gaps}
+    assert gaps["in-game ranks to promote"] == ["Drunk Kala: sapphire → emerald", "OG Kala: sapphire → emerald"]
