@@ -51,14 +51,15 @@ async def _confirm_entry(ctx: Ctx, claim_id: int) -> DiffEntry:
     account = await account_named(ctx.db, ctx.guild.id, found.name)
     if account is None or account.state == "outside":
         return DiffEntry(change="skip", target=target, detail="not in the clan's group yet", key=claim_id)
+    target = f"<@{found.user_id}>: {account.name}"
     mine = await person_of(ctx.db, ctx.guild.id, found.user_id)
-    before = await accounts_of(ctx.db, ctx.guild.id, mine.id) if mine else []
-    after = [*before, account]
+    before = await accounts_of(ctx.db, ctx.guild.id, mine.id) if mine else None
+    after = [*(before or []), account]
     if account.person_id is not None and (mine is None or account.person_id != mine.id):
         other = await person_by_id(ctx.db, ctx.guild.id, account.person_id)
         if other is not None and other.user_id is not None:
             return DiffEntry(change="skip", target=target, detail="belongs to another member", key=claim_id)
-        after = [*before, *await accounts_of(ctx.db, ctx.guild.id, account.person_id)]
+        after = [*(before or []), *await accounts_of(ctx.db, ctx.guild.id, account.person_id)]
     return DiffEntry(change="confirm", target=target, detail=change_text(ctx, before, after), key=claim_id)
 
 
@@ -206,11 +207,8 @@ async def plan_link(
     added = found if isinstance(found, Account) else None
     after = [*before, added] if added is not None else before
     since = f", first joined {first_joined}" if first_joined else ""
-    return Diff(
-        entries=[
-            DiffEntry(change="link", target=f"{who}: {found.name}", detail=change_text(ctx, before, after) + since)
-        ]
-    )
+    detail = change_text(ctx, before if person is not None else None, after) + since
+    return Diff(entries=[DiffEntry(change="link", target=f"{who}: {found.name}", detail=detail)])
 
 
 @plugin.action(risk=DESTRUCTIVE, needs="manage_guild")

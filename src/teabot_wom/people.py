@@ -122,10 +122,12 @@ def labels_of(accounts: Iterable[Account], rule: RankRule | None, today: date) -
     return sorted(out)
 
 
-def change_text(ctx: Ctx, before: Iterable[Account], after: Iterable[Account]) -> str:
-    """A person's labels before and after a change, for a plan's entry."""
+def change_text(ctx: Ctx, before: Iterable[Account] | None, after: Iterable[Account]) -> str:
+    """A person's labels before and after a change, for a plan's entry. `before` is None for a person the change
+    makes, who has no labels yet."""
     rule, today = ctx.config.rank_rule, ctx.now.date()
-    old, new = labels_of(before, rule, today), labels_of(after, rule, today)
+    old = labels_of(before, rule, today) if before is not None else []
+    new = labels_of(after, rule, today)
     return "labels unchanged" if old == new else f"labels {', '.join(old) or 'none'} → {', '.join(new)}"
 
 

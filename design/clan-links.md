@@ -218,7 +218,7 @@ Everyone has the same tenure rule, and staff have a rule of their own besides it
 2. Hand-kept links are not imported; claims start from scratch.
 3. Friends is for both people who left the clan and guests who never joined.
 4. Tenure and staff are separate rules. Tenure comes from days in the clan against Tea's days for each rank, as a floor: a member ranked up early keeps their rank. Any account with an in-game staff rank gives its person that staff rank's Discord role.
-5. Tea's ladder: specialist at 1 week (or earlier, for an introduction post), pyromancer at 1 month, prodigy 3 months, ignitor 6 months, artisan 9 months, firestarter 1 year, legacy 1.5 years, sapphire 2 years, emerald 3 years, ruby 4 years, diamond 5 years, dragonstone 6 years.
+5. Tea's ladder, in 6-month steps up to 3 years and yearly after: specialist at 1 week (or earlier, for an introduction post), pyromancer at 1 month, prodigy 3 months, ignitor 6 months, artisan 9 months, firestarter 1 year, legacy 1.5 years, sapphire 2 years, emerald 2.5 years, ruby 3 years, diamond 4 years, dragonstone 5 years.
 6. Burnt is for members not seen online in a long time, set by hand in game, and outside the ladder.
 7. Main and alt linking is done before any ranks change.
 8. Tea's WOM group is 651.
