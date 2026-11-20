@@ -97,7 +97,7 @@ For each person with a member, from their confirmed accounts. One keyed label jo
 - `linked`, for every member who has a person, accounts or not. A person outlives unlinking every account, so such a member stays inside a rule's scope and loses the clan role.
 - `in_clan` when any of their accounts is in the clan or away, and `left` when they have accounts and none is.
 - `tenure:<name>`, with a `rank_rule` set, while one of the person's accounts is in the clan or away: the rank the rule gives for their days in the clan, counted as the rank audit counts them, or a higher rank of the rule that one of those accounts holds. The rule is a floor, so a member ranked up early in game keeps that rank in Discord, and a member the game has fallen behind still gets the rank their days give. A rule over tenure roles reads it, and the label moves on the day they reach a step. A person with no join date gets the highest rule rank they hold, if any.
-- `rank:<name>` for the in-game rank of each confirmed account in the clan or away, so a rename's in-between state keeps the rank. A rank rule's steps are ordered highest first, so the highest rank a person holds wins with no rank order in the plugin, and separate rules over different ranks, such as staff ranks and a tenure ladder, each find their own. Unlinking an account can only remove labels, so it never raises anyone.
+- `rank:<name>` for the in-game rank of each confirmed account in the clan or away, so a rename's in-between state keeps the rank. A rank named in `inactive_ranks`, such as one for members not seen in a long time, counts only when every such account holds one, since a person with an active account isn't inactive. A rank rule's steps are ordered highest first, so the highest rank a person holds wins with no rank order in the plugin, and separate rules over different ranks, such as staff ranks and a tenure ladder, each find their own. Unlinking an account can only remove labels, so it never raises anyone.
 
 ### Keeping in step with WOM
 
@@ -219,7 +219,7 @@ Everyone has the same tenure rule, and staff have a rule of their own besides it
 3. Friends is for both people who left the clan and guests who never joined.
 4. Tenure and staff are separate rules. Tenure comes from days in the clan against Tea's days for each rank, as a floor: a member ranked up early keeps their rank. Any account with an in-game staff rank gives its person that staff rank's Discord role.
 5. Tea's ladder, in 6-month steps up to 3 years and yearly after: specialist at 1 week (or earlier, for an introduction post), pyromancer at 1 month, prodigy 3 months, ignitor 6 months, artisan 9 months, firestarter 1 year, legacy 1.5 years, sapphire 2 years, emerald 2.5 years, ruby 3 years, diamond 4 years, dragonstone 5 years.
-6. Burnt is for members not seen online in a long time, set by hand in game, and outside the ladder.
+6. Burnt is for members not seen online in a long time, set by hand in game, and outside the ladder. It is Tea's inactive rank, so a person is burnt in Discord only when all their accounts are.
 7. Main and alt linking is done before any ranks change.
 8. Tea's WOM group is 651.
 

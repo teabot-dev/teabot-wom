@@ -279,20 +279,25 @@ async def test_a_name_outside_the_group_is_turned_away_with_close_names(teabot_h
 
 async def test_an_admin_links_a_main_and_its_alts_in_one_plan(teabot_harness: HarnessFactory) -> None:
     rule = RankRule(ranks=[RankStep(rank="sapphire", days=0), RankStep(rank="emerald", days=365)])
-    harness = await setup(teabot_harness, rank_rule=rule)
+    harness = await setup(teabot_harness, rank_rule=rule, inactive_ranks=["burnt"])
     kala = harness.guild.add_member(NONE, name="kala")
+    bob = harness.guild.add_member(NONE, name="bob")
     serve(
         harness,
         [
             membership(1, "OG Kala", "sapphire", "2020-01-01"),
             membership(2, "Drunk Kala", "sapphire", "2026-10-01"),
             membership(3, "OF Kala", "burnt", "2023-01-01"),
+            membership(4, "Old Bob", "burnt", "2026-01-01"),
         ],
     )
     await run_sync(harness)
     plan = await harness.plan(admin.link, names=["OG Kala", "drunk kala", "OF Kala"], member=kala)
     assert plan.counts == {"link": 1}
     await settle(harness, plan)
-    assert await labels(harness, kala.id) == ["in_clan", "linked", "rank:burnt", "rank:sapphire", "tenure:emerald"]
+    # Kala plays an active account, so OF Kala's inactive rank gives no label; Bob's only account is inactive.
+    assert await labels(harness, kala.id) == ["in_clan", "linked", "rank:sapphire", "tenure:emerald"]
+    await settle(harness, await harness.plan(admin.link, names=["Old Bob"], member=bob))
+    assert await labels(harness, bob.id) == ["in_clan", "linked", "rank:burnt", "tenure:sapphire"]
     gaps = {g.kind: g.examples for g in (await harness.call(report.gaps)).gaps}
     assert gaps["in-game ranks to promote"] == ["Drunk Kala: sapphire → emerald", "OG Kala: sapphire → emerald"]

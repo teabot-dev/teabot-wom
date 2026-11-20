@@ -249,8 +249,8 @@ async def write_labels(ctx: Ctx) -> None:
     if state is None or state.fetched_at is None:
         return
     people, owned = await all_people(ctx.db, ctx.guild.id)
-    rule, today = ctx.config.rank_rule, ctx.now.date()
-    labels = {p.user_id: labels_of(owned.get(p.id, []), rule, today) for p in people if p.user_id is not None}
+    today = ctx.now.date()
+    labels = {p.user_id: labels_of(owned.get(p.id, []), ctx.config, today) for p in people if p.user_id is not None}
     try:
         await ctx.labels.replace_all(labels, as_of=state.fetched_at)
     except DirectoryUnavailable:

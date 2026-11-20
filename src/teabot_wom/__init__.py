@@ -40,6 +40,10 @@ class WomConfig(BaseModel):
     rank_rule: RankRule | None = Field(
         default=None, description="Ranks by days in the clan, for tenure: labels and the rank audit"
     )
+    inactive_ranks: list[str] = Field(
+        default=[],
+        description="In-game ranks for inactive members, labelled only when every account in the clan holds one",
+    )
 
 
 plugin = Plugin(

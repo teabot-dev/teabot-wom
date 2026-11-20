@@ -17,6 +17,7 @@ Keep Discord in step with your clan's [Wise Old Man](https://wiseoldman.net) gro
 | `clan_role` | The Discord role clan members hold, so `wom_gaps` can list holders with no linked account. |
 | `admin_channel` | Where the weekly digest, and a held sync, are posted. |
 | `rank_rule` | Your clan's ranks by days in the clan, for `tenure:` labels and the rank audit, such as `{"count_from": "current_stint", "ranks": [{"rank": "sapphire", "days": 0}, {"rank": "emerald", "days": 365}]}`. Leave it out if your clan ranks some other way. |
+| `inactive_ranks` | In-game ranks your clan gives inactive members, such as `["burnt"]`. A person gets their `rank:` label only when every account of theirs in the clan holds one, since a person with an active account isn't inactive. |
 
 Once an hour, and a minute after the plugin is turned on, teabot reads the group: who joined, who left, ranks, and renames. `/wom gaps` shows when it last did. An account missing from the group counts as away for `away_days`, still in the clan, before it counts as left, so a rename that Wise Old Man has not approved yet costs nobody anything.
 
@@ -54,7 +55,7 @@ Every member with a confirmed account gets:
 
 - `linked`, which stays after they drop every account;
 - `in_clan` while one of their accounts is in the clan or away, and `left` once none is;
-- `rank:<rank>` for each in-game rank one of their accounts in the clan holds;
+- `rank:<rank>` for each in-game rank one of their accounts in the clan holds, where an inactive rank counts only when every one of those accounts holds one;
 - with a `rank_rule`, `tenure:<rank>` while one of their accounts is in the clan: the rank the rule gives for their days in the clan, or a higher rank of the rule that one of those accounts holds, since a member ranked up early keeps it.
 
 They count for one day after the last good sync, so a Wise Old Man outage of more than a day leaves them matching nobody.

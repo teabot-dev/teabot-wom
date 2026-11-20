@@ -4,7 +4,8 @@ A person's labels come from their confirmed accounts only:
 - `linked` for every person with a member, accounts or not, so a member who drops every account stays inside a role
   rule's scope;
 - `in_clan` when an account is in the clan or away, and `left` when they have accounts and none is;
-- `rank:<rank>` for each in-game rank one of their accounts in the clan, or away, holds;
+- `rank:<rank>` for each in-game rank one of their accounts in the clan, or away, holds, where an inactive rank
+  counts only when every such account holds one;
 - `tenure:<rank>`, with a `rank_rule` set, while one of their accounts is in the clan: the rank the rule gives for
   their days in it, or a higher rank of the rule that one of those accounts holds, since a member ranked up early
   keeps it.
@@ -16,7 +17,7 @@ from datetime import date, datetime, timedelta
 from pydantic import BaseModel
 from teabot.sdk import Queries, Tx
 
-from teabot_wom import Ctx, RankRule
+from teabot_wom import Ctx, RankRule, WomConfig
 from teabot_wom.names import key
 
 PRESENT = ("in", "away")
@@ -110,13 +111,18 @@ def label(rank: str) -> str:
     return rank.replace(" ", "_")
 
 
-def labels_of(accounts: Iterable[Account], rule: RankRule | None, today: date) -> list[str]:
-    """The labels a person with a member gives, from their confirmed accounts and the rank rule."""
+def labels_of(accounts: Iterable[Account], config: WomConfig, today: date) -> list[str]:
+    """The labels a person with a member gives, from their confirmed accounts and the clan's settings."""
     found = list(accounts)
+    rule = config.rank_rule
     out = {"linked"}
     if found:
         out.add("in_clan" if any(a.present for a in found) else "left")
-    out |= {f"rank:{label(a.rank)}" for a in found if a.present and a.rank}
+    ranks = {a.rank for a in found if a.present and a.rank}
+    if active := ranks - set(config.inactive_ranks):
+        # A person with an active account isn't inactive, whatever their other accounts hold.
+        ranks = active
+    out |= {f"rank:{label(r)}" for r in ranks}
     if rule is not None and (tenure := tenure_of(rule, found, today)) is not None:
         out.add(f"tenure:{label(tenure)}")
     return sorted(out)
@@ -125,9 +131,9 @@ def labels_of(accounts: Iterable[Account], rule: RankRule | None, today: date) -
 def change_text(ctx: Ctx, before: Iterable[Account] | None, after: Iterable[Account]) -> str:
     """A person's labels before and after a change, for a plan's entry. `before` is None for a person the change
     makes, who has no labels yet."""
-    rule, today = ctx.config.rank_rule, ctx.now.date()
-    old = labels_of(before, rule, today) if before is not None else []
-    new = labels_of(after, rule, today)
+    today = ctx.now.date()
+    old = labels_of(before, ctx.config, today) if before is not None else []
+    new = labels_of(after, ctx.config, today)
     return "labels unchanged" if old == new else f"labels {', '.join(old) or 'none'} → {', '.join(new)}"
 
 
