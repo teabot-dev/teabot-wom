@@ -181,7 +181,7 @@ Everyone has the same tenure rule, and staff have a rule of their own besides it
 4. On the site, make the role rules, scoped to linked members (`labels_from: wom, labels_any: [linked]`), so unlinked members keep their roles:
    - **Membership:** one rule with two steps, Clan Member on `in_clan`, then Friends on `left`, so a linked member holds exactly one. Friends is also for guests who never joined; they aren't linked, so they're outside the scope and keep the Friends an admin gives them by hand.
    - **Tenure:** one rule over the tenure rank roles, a step per tenure rank on `tenure:<rank>`, highest first, with a cap that fits a promotion night. A linked member holds at most one tenure role.
-   - **Staff:** one rule over the staff rank roles, a step per staff rank on `rank:<rank>`, highest first. A linked member holds at most one staff role.
+   - **Staff:** one rule with one step, the Deputy Owner role on `rank:deputy_owner`, Tea's only staff rank.
 5. Note which admins confirmed the rules, since their grants end when those admins lose the rights, and a second admin renews them by running the same action again.
 
 ### Step 2: the link channel
@@ -222,6 +222,7 @@ Everyone has the same tenure rule, and staff have a rule of their own besides it
 6. Burnt is for members not seen online in a long time, set by hand in game, and outside the ladder. It is Tea's inactive rank, so a person is burnt in Discord only when all their accounts are.
 7. Main and alt linking is done before any ranks change.
 8. Tea's WOM group is 651.
+9. Deputy owner is Tea's only staff rank. The game's other ranks outside the ladder, such as zenyte, onyx, kitten, admiral, maxed, beast and goblin, give `rank:` labels and no role rule.
 
 ## Order of work
 
